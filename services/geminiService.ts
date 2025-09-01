@@ -107,7 +107,7 @@ export const generateFootballSummary = async (query: string, wordCount: number, 
 
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
-    contents: prompt,
+    contents: { parts: [{ text: prompt }] },
     config: {
       tools: [{ googleSearch: {} }],
     },
@@ -165,7 +165,7 @@ export const generateTeamInsights = async (teamName: string): Promise<TeamInsigh
 
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
-    contents: prompt,
+    contents: { parts: [{ text: prompt }] },
     config: {
       tools: [{ googleSearch: {} }],
     },
@@ -204,7 +204,7 @@ export const generateWaterCoolerQuote = async (tone: string): Promise<string> =>
   `;
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
-    contents: prompt,
+    contents: { parts: [{ text: prompt }] },
   });
   return response.text.trim().replace(/^"|"$/g, '');
 };
@@ -214,6 +214,6 @@ export const healthCheck = async (): Promise<void> => {
     // This is a lightweight call to verify authentication and basic API access.
     await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: "test",
+        contents: { parts: [{ text: "test" }] },
     });
 };
