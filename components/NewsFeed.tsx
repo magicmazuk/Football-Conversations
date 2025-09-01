@@ -16,9 +16,10 @@ import { apiKeyManager } from '../services/apiKeyManager';
 interface NewsFeedProps {
   topic: NewsTopic;
   onOpenTeamModal?: () => void;
+  onGlobalError: (error: unknown) => void;
 }
 
-export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) => {
+export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGlobalError }) => {
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,12 +64,14 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) =>
       const data = await generateFootballSummary(topic.query, wordCount, topic.isFavorite);
       setSummaryData(data);
       cacheService.set(cacheKey, data);
-    } catch (e: any) {
-      setError(e.message || 'An unknown error occurred.');
+    } catch (e: unknown) {
+      const error = e instanceof Error ? e : new Error(String(e) || 'An unknown error occurred.');
+      setError(error.message);
+      onGlobalError(error);
     } finally {
       setIsLoading(false);
     }
-  }, [topic.id, topic.query, wordCount, topic.isFavorite]);
+  }, [topic.id, topic.query, wordCount, topic.isFavorite, onGlobalError]);
   
   const favoriteTeamName = topic.isFavorite ? topic.title.replace(' Focus', '') : '';
 

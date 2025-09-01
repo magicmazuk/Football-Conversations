@@ -27,15 +27,19 @@ const App: React.FC = () => {
   const [globalError, setGlobalError] = useState<Error | null>(null);
   const [healthCheckStatus, setHealthCheckStatus] = useState<'idle' | 'checking' | 'success' | 'failed'>('idle');
 
-  // Global unhandled rejection handler
+  const handleApiError = (error: unknown) => {
+    if (error instanceof Error) {
+        setGlobalError(error);
+    } else {
+        setGlobalError(new Error(String(error) || "An unknown error occurred"));
+    }
+  };
+
+  // Global unhandled rejection handler as a fallback
   useEffect(() => {
     const handleRejection = (event: PromiseRejectionEvent) => {
         console.error('Unhandled Promise Rejection:', event.reason);
-        if (event.reason instanceof Error) {
-            setGlobalError(event.reason);
-        } else {
-            setGlobalError(new Error(String(event.reason) || "An unknown rejection occurred"));
-        }
+        handleApiError(event.reason);
     };
 
     window.addEventListener('unhandledrejection', handleRejection);
@@ -95,8 +99,10 @@ const App: React.FC = () => {
         cacheService.set(cacheKey, newQuote);
       } catch (error: any) {
         console.error(error);
-        setQuoteError(error.message || "Couldn't fetch a witty quote, looks like the AI is on a tea break!");
+        const errorMessage = error instanceof Error ? error.message : "Couldn't fetch a witty quote, looks like the AI is on a tea break!";
+        setQuoteError(errorMessage);
         setQuote('');
+        handleApiError(error);
       } finally {
         setIsQuoteLoading(false);
       }
@@ -118,7 +124,7 @@ const App: React.FC = () => {
         setTimeout(() => setHealthCheckStatus('idle'), 3000);
     } catch (error: any) {
         setHealthCheckStatus('failed');
-        // The global unhandledrejection handler will catch and display the error
+        handleApiError(error);
     }
   };
 
@@ -160,7 +166,8 @@ const App: React.FC = () => {
           />
           <ConversationGenerator 
             favoriteTeam={favoriteTeam} 
-            onSetFavoriteTeam={setFavoriteTeam} 
+            onSetFavoriteTeam={setFavoriteTeam}
+            onGlobalError={handleApiError}
           />
           
           <div className="mt-10">
@@ -171,6 +178,7 @@ const App: React.FC = () => {
                     key={topic.id} 
                     topic={topic} 
                     onOpenTeamModal={() => setIsTeamModalOpen(true)}
+                    onGlobalError={handleApiError}
                   />
                 ))}
               </div>
@@ -200,7 +208,10 @@ const App: React.FC = () => {
             <ErrorDisplay 
                 error={globalError} 
                 onClose={() => setGlobalError(null)}
-                onShowApiKeyForm={() => setShowApiKeyBanner(true)}
+                onShowApiKeyForm={() => {
+                  setShowApiKeyBanner(true);
+                  setGlobalError(null);
+                }}
             />
         )}
     </>

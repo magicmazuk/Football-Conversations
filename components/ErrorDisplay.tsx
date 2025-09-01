@@ -19,10 +19,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose, onSh
                         <p className="text-sm">This is often caused by a missing, invalid, or restricted API key.</p>
                         <div className="mt-3 flex flex-wrap gap-2">
                             <button
-                                onClick={() => {
-                                    onShowApiKeyForm();
-                                    onClose(); // Close this banner when opening the other one
-                                }}
+                                onClick={onShowApiKeyForm}
                                 className="px-3 py-1.5 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-100 focus:ring-red-600 transition-colors text-sm"
                             >
                                 Set API Key

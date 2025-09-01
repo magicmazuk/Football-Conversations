@@ -15,9 +15,10 @@ import { apiKeyManager } from '../services/apiKeyManager';
 interface ConversationGeneratorProps {
     favoriteTeam: string;
     onSetFavoriteTeam: (team: string) => void;
+    onGlobalError: (error: unknown) => void;
 }
 
-export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ favoriteTeam, onSetFavoriteTeam }) => {
+export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ favoriteTeam, onSetFavoriteTeam, onGlobalError }) => {
     const [inputValue, setInputValue] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -77,12 +78,14 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
             const data = await generateTeamInsights(teamToSearch);
             setTeamInsights(data);
             cacheService.set(cacheKey, data);
-        } catch (e: any) {
-            setError(e.message || 'An unknown error occurred.');
+        } catch (e: unknown) {
+            const error = e instanceof Error ? e : new Error(String(e) || 'An unknown error occurred.');
+            setError(error.message);
+            onGlobalError(error);
         } finally {
             setIsLoading(false);
         }
-    }, [inputValue]);
+    }, [inputValue, onGlobalError]);
 
     const isCurrentTeamFavorite = favoriteTeam === searchedTeam && !!searchedTeam;
 
