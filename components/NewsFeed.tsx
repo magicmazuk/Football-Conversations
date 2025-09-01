@@ -11,6 +11,7 @@ import { RefreshIcon } from './icons/RefreshIcon';
 import { LatestResults } from './LatestResults';
 import { PencilIcon } from './icons/PencilIcon';
 import { LeagueTable } from './LeagueTable';
+import { apiKeyManager } from '../services/apiKeyManager';
 
 interface NewsFeedProps {
   topic: NewsTopic;
@@ -37,6 +38,11 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onAp
   }, [topic.id]);
 
   const handleGenerate = useCallback(async (forceRefresh = false) => {
+    if (!apiKeyManager.getApiKey()) {
+      onApiKeyError();
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     const cacheKey = `summary-${topic.id}-${wordCount}`;

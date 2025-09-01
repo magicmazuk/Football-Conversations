@@ -9,6 +9,7 @@ import { cacheService } from './services/cacheService';
 import { TeamSelectionModal } from './components/TeamSelectionModal';
 import { teams } from './data/teams';
 import { ApiKeyBanner } from './components/ApiKeyBanner';
+import { apiKeyManager } from './services/apiKeyManager';
 
 const FAVORITE_TEAM_KEY = 'watercooler-fc-favorite-team';
 
@@ -22,6 +23,13 @@ const App: React.FC = () => {
     return localStorage.getItem(FAVORITE_TEAM_KEY) || 'Celtic';
   });
   const [showApiKeyBanner, setShowApiKeyBanner] = useState(false);
+
+  // Proactive API Key check on initial load
+  useEffect(() => {
+    if (!apiKeyManager.getApiKey()) {
+      setShowApiKeyBanner(true);
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(FAVORITE_TEAM_KEY, favoriteTeam);
@@ -44,9 +52,15 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const fetchQuote = async () => {
+      // Don't fetch if we know the API key is missing.
+      if (!apiKeyManager.getApiKey()) {
+        setQuote("Set your Gemini API key to get started!");
+        setIsQuoteLoading(false);
+        return;
+      }
+
       setIsQuoteLoading(true);
       setQuoteError(null);
-      setShowApiKeyBanner(false);
       const cacheKey = `water-cooler-quote-${quoteTone.replace(/\s+/g, '-').toLowerCase()}`;
       const cachedQuote = cacheService.get<string>(cacheKey);
 

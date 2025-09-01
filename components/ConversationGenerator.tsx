@@ -10,6 +10,7 @@ import { RefreshIcon } from './icons/RefreshIcon';
 import { TrophyIcon } from './icons/TrophyIcon';
 import { TrendingUpIcon } from './icons/TrendingUpIcon';
 import { StarIcon } from './icons/StarIcon';
+import { apiKeyManager } from '../services/apiKeyManager';
 
 interface ConversationGeneratorProps {
     favoriteTeam: string;
@@ -48,6 +49,11 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
     const handleGenerate = useCallback(async (forceRefresh = false) => {
         const teamToSearch = inputValue.trim();
         if (!teamToSearch) return;
+
+        if (!apiKeyManager.getApiKey()) {
+            onApiKeyError();
+            return;
+        }
 
         setIsLoading(true);
         setError(null);
