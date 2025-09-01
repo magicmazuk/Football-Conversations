@@ -11,14 +11,28 @@ const getAiInstance = () => {
 };
 
 /**
- * Checks if the error from the Gemini API is related to an invalid API key.
+ * Checks if the error from the Gemini API is related to an invalid API key or permissions.
  */
 const isApiKeyError = (error: any): boolean => {
     if (error instanceof Error) {
         const message = error.message.toLowerCase();
-        // Google's API client often includes a status code like [400]
-        return message.includes('api key not valid') || 
-               message.includes('api key is invalid');
+        
+        // Google's API client often includes a status code like [400] or [403] for client-side errors.
+        const hasApiClientError = /\[(400|403)\]/.test(message);
+        if (hasApiClientError) {
+            return true;
+        }
+
+        // Check for common phrases related to key invalidity or permissions.
+        const keyPhrases = [
+            'api key not valid', 
+            'api key is invalid',
+            'permission denied',
+            'the caller does not have permission',
+            'api_key_not_valid'
+        ];
+        
+        return keyPhrases.some(phrase => message.includes(phrase));
     }
     return false;
 }
@@ -149,7 +163,7 @@ export const generateFootballSummary = async (query: string, wordCount: number, 
         throw error;
     }
     if (isApiKeyError(error)) {
-        throw new Error("Configuration Error: The provided Google Gemini API key is invalid.");
+        throw new Error("Configuration Error: The provided Google Gemini API key is invalid or has incorrect permissions for this website.");
     }
     throw new Error("Failed to generate summary. The AI service might be temporarily unavailable.");
   }
@@ -216,7 +230,7 @@ export const generateTeamInsights = async (teamName: string): Promise<TeamInsigh
         throw error;
     }
     if (isApiKeyError(error)) {
-        throw new Error("Configuration Error: The provided Google Gemini API key is invalid.");
+        throw new Error("Configuration Error: The provided Google Gemini API key is invalid or has incorrect permissions for this website.");
     }
     throw new Error(`Failed to generate insights for ${teamName}.`);
   }
@@ -251,7 +265,7 @@ export const generateWaterCoolerQuote = async (tone: string): Promise<string> =>
         throw error;
     }
     if (isApiKeyError(error)) {
-        throw new Error("Configuration Error: The provided Google Gemini API key is invalid.");
+        throw new Error("Configuration Error: The provided Google Gemini API key is invalid or has incorrect permissions for this website.");
     }
     throw new Error("Failed to generate a quote.");
   }
