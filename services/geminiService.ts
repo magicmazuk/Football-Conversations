@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { SummaryData, Citation, TeamInsights } from '../types';
+import { SummaryData, Citation, TeamInsights, LeagueTableRow } from '../types';
 
 const API_KEY = process.env.API_KEY;
 
@@ -23,6 +23,22 @@ const parseResponseText = (text: string): Omit<SummaryData, 'citations'> => {
   const results = resultsBlock.split('\n').map(s => s.trim().replace(/^- /, '')).filter(s => s.length > 0);
   const form = text.match(/\[FORM\]([\s\S]*?)\[\/FORM\]/)?.[1]?.trim() || '';
 
+  const leagueTableBlock = text.match(/\[LEAGUE_TABLE\]([\s\S]*?)\[\/LEAGUE_TABLE\]/)?.[1]?.trim() || '';
+  const leagueTableRows = leagueTableBlock.split('\n').map(row => row.trim().replace(/^- /, '')).filter(row => row);
+  const leagueTable: LeagueTableRow[] = leagueTableRows.map(row => {
+      const parts = row.split('|');
+      if (parts.length === 5) {
+          return {
+              position: parts[0].trim(),
+              teamName: parts[1].trim(),
+              played: parts[2].trim(),
+              goalDifference: parts[3].trim(),
+              points: parts[4].trim(),
+          };
+      }
+      return null;
+  }).filter((row): row is LeagueTableRow => row !== null);
+
   const data: Omit<SummaryData, 'citations'> = { headline, summary, conversationStarters };
 
   if (results.length > 0) {
@@ -30,6 +46,9 @@ const parseResponseText = (text: string): Omit<SummaryData, 'citations'> => {
   }
   if (form) {
     data.form = form;
+  }
+  if (leagueTable.length > 0) {
+    data.leagueTable = leagueTable;
   }
   
   return data;
@@ -49,6 +68,16 @@ export const generateFootballSummary = async (query: string, wordCount: number, 
       [FORM]
       - A short summary of their recent form as a string of letters (W for Win, D for Draw, L for Loss) for the last 5 matches, most recent first (e.g., WWDLD).
       [/FORM]
+
+      [LEAGUE_TABLE]
+      - Provide a snippet of the current league table for the team's primary domestic league.
+      - Show the team itself, plus 2-3 teams above and 2-3 teams below them in the standings.
+      - Format each row as a pipe-separated string: "Position|Team Name|Played|Goal Difference|Points"
+      - Example:
+      - 1|Team A|30|+25|70
+      - 2|Your Team|30|+20|65
+      - 3|Team C|30|+18|62
+      [/LEAGUE_TABLE]
     `;
 
     const prompt = `

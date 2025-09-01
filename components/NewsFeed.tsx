@@ -10,6 +10,7 @@ import { LoadingSpinner } from './icons/LoadingSpinner';
 import { RefreshIcon } from './icons/RefreshIcon';
 import { LatestResults } from './LatestResults';
 import { PencilIcon } from './icons/PencilIcon';
+import { LeagueTable } from './LeagueTable';
 
 interface NewsFeedProps {
   topic: NewsTopic;
@@ -61,6 +62,8 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) =>
       setIsLoading(false);
     }
   }, [topic.id, topic.query, wordCount, topic.isFavorite]);
+  
+  const favoriteTeamName = topic.isFavorite ? topic.title.replace(' Focus', '') : '';
 
   return (
     <div className="bg-card-bg rounded-xl shadow-sm overflow-hidden flex flex-col border border-border-color h-full">
@@ -120,6 +123,9 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) =>
               <div className="space-y-6 animate-fade-in">
                  {topic.isFavorite && summaryData.results && summaryData.form && (
                     <LatestResults results={summaryData.results} form={summaryData.form} />
+                )}
+                {topic.isFavorite && summaryData.leagueTable && (
+                    <LeagueTable tableData={summaryData.leagueTable} favoriteTeam={favoriteTeamName} />
                 )}
                 <SummaryCard data={summaryData} />
                 <ConversationStarters starters={summaryData.conversationStarters} />

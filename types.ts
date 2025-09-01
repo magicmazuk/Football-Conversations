@@ -12,6 +12,14 @@ export interface Citation {
   title: string;
 }
 
+export interface LeagueTableRow {
+  position: string;
+  teamName: string;
+  played: string;
+  goalDifference: string;
+  points: string;
+}
+
 export interface SummaryData {
   headline: string;
   summary: string;
@@ -19,6 +27,7 @@ export interface SummaryData {
   citations: Citation[];
   results?: string[];
   form?: string;
+  leagueTable?: LeagueTableRow[];
 }
 
 export interface TeamInsights {
