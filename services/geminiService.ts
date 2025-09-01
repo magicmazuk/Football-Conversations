@@ -1,10 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 import { SummaryData, Citation, TeamInsights, LeagueTableRow } from '../types';
+import { apiKeyManager } from './apiKeyManager';
 
 const getAiInstance = () => {
-  const API_KEY = process.env.API_KEY;
+  const API_KEY = apiKeyManager.getApiKey();
   if (!API_KEY) {
-    throw new Error("Configuration Error: The Google Gemini API key is missing. Please set the API_KEY environment variable to use the AI features.");
+    throw new Error("Configuration Error: The Google Gemini API key is missing.");
   }
   return new GoogleGenAI({ apiKey: API_KEY });
 };
@@ -132,10 +133,10 @@ export const generateFootballSummary = async (query: string, wordCount: number, 
     };
   } catch (error) {
     console.error("Error generating summary with Gemini:", error);
-    if (error instanceof Error && error.message.includes("API key")) {
+    if (error instanceof Error && error.message.startsWith("Configuration Error:")) {
         throw error;
     }
-    throw new Error("Failed to generate summary. Please check your connection and try again.");
+    throw new Error("Failed to generate summary. The AI service might be temporarily unavailable.");
   }
 };
 
@@ -196,7 +197,7 @@ export const generateTeamInsights = async (teamName: string): Promise<TeamInsigh
 
   } catch (error) {
     console.error(`Error generating insights for ${teamName}:`, error);
-    if (error instanceof Error && error.message.includes("API key")) {
+    if (error instanceof Error && error.message.startsWith("Configuration Error:")) {
         throw error;
     }
     throw new Error(`Failed to generate insights for ${teamName}.`);
@@ -228,7 +229,7 @@ export const generateWaterCoolerQuote = async (tone: string): Promise<string> =>
     return response.text.trim().replace(/^"|"$/g, '');
   } catch (error) {
     console.error("Error generating water cooler quote:", error);
-    if (error instanceof Error && error.message.includes("API key")) {
+    if (error instanceof Error && error.message.startsWith("Configuration Error:")) {
         throw error;
     }
     throw new Error("Failed to generate a quote.");

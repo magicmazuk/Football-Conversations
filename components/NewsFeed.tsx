@@ -15,9 +15,10 @@ import { LeagueTable } from './LeagueTable';
 interface NewsFeedProps {
   topic: NewsTopic;
   onOpenTeamModal?: () => void;
+  onApiKeyError: () => void;
 }
 
-export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) => {
+export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onApiKeyError }) => {
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,11 +58,16 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) =>
       setSummaryData(data);
       cacheService.set(cacheKey, data);
     } catch (e: any) {
-      setError(e.message || 'An unknown error occurred.');
+      if (e.message.includes("API key is missing")) {
+        onApiKeyError();
+        setSummaryData(null);
+      } else {
+        setError(e.message || 'An unknown error occurred.');
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [topic.id, topic.query, wordCount, topic.isFavorite]);
+  }, [topic.id, topic.query, wordCount, topic.isFavorite, onApiKeyError]);
   
   const favoriteTeamName = topic.isFavorite ? topic.title.replace(' Focus', '') : '';
 

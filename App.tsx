@@ -8,6 +8,7 @@ import { generateWaterCoolerQuote } from './services/geminiService';
 import { cacheService } from './services/cacheService';
 import { TeamSelectionModal } from './components/TeamSelectionModal';
 import { teams } from './data/teams';
+import { ApiKeyBanner } from './components/ApiKeyBanner';
 
 const FAVORITE_TEAM_KEY = 'watercooler-fc-favorite-team';
 
@@ -20,6 +21,7 @@ const App: React.FC = () => {
   const [favoriteTeam, setFavoriteTeam] = useState<string>(() => {
     return localStorage.getItem(FAVORITE_TEAM_KEY) || 'Celtic';
   });
+  const [showApiKeyBanner, setShowApiKeyBanner] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(FAVORITE_TEAM_KEY, favoriteTeam);
@@ -44,6 +46,7 @@ const App: React.FC = () => {
     const fetchQuote = async () => {
       setIsQuoteLoading(true);
       setQuoteError(null);
+      setShowApiKeyBanner(false);
       const cacheKey = `water-cooler-quote-${quoteTone.replace(/\s+/g, '-').toLowerCase()}`;
       const cachedQuote = cacheService.get<string>(cacheKey);
 
@@ -59,14 +62,23 @@ const App: React.FC = () => {
         cacheService.set(cacheKey, newQuote);
       } catch (error: any) {
         console.error(error);
-        setQuoteError(error.message || "Couldn't fetch a witty quote, looks like the AI is on a tea break!");
-        setQuote('');
+        if (error.message.includes("API key is missing")) {
+            setShowApiKeyBanner(true);
+            setQuote('');
+        } else {
+            setQuoteError(error.message || "Couldn't fetch a witty quote, looks like the AI is on a tea break!");
+            setQuote('');
+        }
       } finally {
         setIsQuoteLoading(false);
       }
     };
     fetchQuote();
   }, [quoteTone]);
+
+  const handleApiKeyError = () => {
+    setShowApiKeyBanner(true);
+  };
 
   const handleSetFavoriteTeam = (team: string) => {
     setFavoriteTeam(team);
@@ -100,6 +112,7 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-page-bg font-sans">
         <Header />
         <main className="container mx-auto p-4 md:p-6">
+          {showApiKeyBanner && <ApiKeyBanner onKeySaved={() => window.location.reload()} />}
           <WaterCoolerQuote 
             quote={quote} 
             isLoading={isQuoteLoading}
@@ -108,7 +121,11 @@ const App: React.FC = () => {
             selectedTone={quoteTone}
             onToneChange={setQuoteTone} 
           />
-          <ConversationGenerator favoriteTeam={favoriteTeam} onSetFavoriteTeam={setFavoriteTeam} />
+          <ConversationGenerator 
+            favoriteTeam={favoriteTeam} 
+            onSetFavoriteTeam={setFavoriteTeam} 
+            onApiKeyError={handleApiKeyError} 
+          />
           
           <div className="mt-10">
               <h2 className="text-3xl font-bold text-text-primary mb-4">Your Weekly Briefing</h2>
@@ -118,6 +135,7 @@ const App: React.FC = () => {
                     key={topic.id} 
                     topic={topic} 
                     onOpenTeamModal={() => setIsTeamModalOpen(true)}
+                    onApiKeyError={handleApiKeyError}
                   />
                 ))}
               </div>

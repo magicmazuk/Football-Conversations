@@ -14,9 +14,10 @@ import { StarIcon } from './icons/StarIcon';
 interface ConversationGeneratorProps {
     favoriteTeam: string;
     onSetFavoriteTeam: (team: string) => void;
+    onApiKeyError: () => void;
 }
 
-export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ favoriteTeam, onSetFavoriteTeam }) => {
+export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ favoriteTeam, onSetFavoriteTeam, onApiKeyError }) => {
     const [inputValue, setInputValue] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -72,11 +73,16 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
             setTeamInsights(data);
             cacheService.set(cacheKey, data);
         } catch (e: any) {
-            setError(e.message || 'An unknown error occurred.');
+            if (e.message.includes("API key is missing")) {
+                onApiKeyError();
+                setTeamInsights(null);
+            } else {
+                setError(e.message || 'An unknown error occurred.');
+            }
         } finally {
             setIsLoading(false);
         }
-    }, [inputValue]);
+    }, [inputValue, onApiKeyError]);
 
     const isCurrentTeamFavorite = favoriteTeam === searchedTeam && !!searchedTeam;
 
