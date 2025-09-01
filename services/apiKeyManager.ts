@@ -1,4 +1,4 @@
-const SESSION_STORAGE_KEY = 'gemini-api-key';
+const SESSION_STORAGE_KEY = 'AIzaSyBUf1QGu51VfitVMrQBI9w_4aREkazlSaE';
 
 export const apiKeyManager = {
   getApiKey: (): string | null => {
