@@ -23,14 +23,16 @@ const isApiKeyError = (error: any): boolean => {
             return true;
         }
 
-        // Check for common phrases related to key invalidity or permissions.
+        // Check for common phrases related to key invalidity, permissions, or network failures
+        // common in deployed environments with restricted keys.
         const keyPhrases = [
             'api key not valid', 
             'api key is invalid',
             'permission denied',
             'the caller does not have permission',
             'api_key_not_valid',
-            'referer restrictions' // More specific check for a common deployment issue
+            'referer restrictions',
+            'failed to fetch' // Catches CORS/network errors often related to key restrictions
         ];
         
         return keyPhrases.some(phrase => message.includes(phrase));
