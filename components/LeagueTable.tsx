@@ -31,7 +31,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ tableData, favoriteTea
             {tableData.map((row, index) => {
               const isFavorite = row.teamName.toLowerCase().includes(favoriteTeam.toLowerCase());
               return (
-                <tr key={index} className={`border-b border-border-color last:border-b-0 ${isFavorite ? 'bg-indigo-100 text-brand-primary font-bold' : ''}`}>
+                <tr key={index} className={`border-b border-border-color last:border-b-0 ${isFavorite ? 'bg-slate-200 text-text-primary font-bold' : ''}`}>
                   <td className="px-2 py-2 text-center">{row.position}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{row.teamName}</td>
                   <td className="px-2 py-2 text-center">{row.played}</td>

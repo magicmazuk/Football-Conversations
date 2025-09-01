@@ -65,6 +65,14 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) =>
   
   const favoriteTeamName = topic.isFavorite ? topic.title.replace(' Focus', '') : '';
 
+  const handleWordCountChange = (count: number) => {
+    if (count !== wordCount) {
+        setSummaryData(null); // Clear existing summary to show the generate button again
+        setError(null);
+    }
+    setWordCount(count);
+  };
+
   return (
     <div className="bg-card-bg rounded-xl shadow-sm overflow-hidden flex flex-col border border-border-color h-full">
       <div className={`p-5 bg-gradient-to-br ${topic.gradient} flex justify-between items-center`}>
@@ -95,25 +103,27 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) =>
             </div>
         )}
 
-        <Controls wordCount={wordCount} setWordCount={setWordCount} />
-
-        <button
-          onClick={() => handleGenerate()}
-          disabled={isLoading}
-          className="w-full mt-4 flex items-center justify-center px-6 py-2.5 border border-transparent text-base font-medium rounded-md text-white bg-brand-primary hover:bg-brand-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-card-bg focus:ring-brand-primary disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-        >
-          {isLoading ? (
-            <>
-              <LoadingSpinner className="-ml-1 mr-3 h-5 w-5 text-white" />
-              <span>Generating...</span>
-            </>
-          ) : (
-            <>
-              <SparklesIcon />
-              <span>Get The Latest Scoop</span>
-            </>
-          )}
-        </button>
+        <Controls wordCount={wordCount} setWordCount={handleWordCountChange} />
+        
+        {!summaryData && (
+          <button
+            onClick={() => handleGenerate()}
+            disabled={isLoading}
+            className="w-full mt-4 flex items-center justify-center px-6 py-2.5 border border-transparent text-base font-medium rounded-md text-white bg-brand-primary hover:bg-brand-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-card-bg focus:ring-brand-primary disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoading ? (
+              <>
+                <LoadingSpinner className="-ml-1 mr-3 h-5 w-5 text-white" />
+                <span>Generating...</span>
+              </>
+            ) : (
+              <>
+                <SparklesIcon />
+                <span>Get The Latest Scoop</span>
+              </>
+            )}
+          </button>
+        )}
 
         <div className="mt-4 flex-grow flex flex-col">
           <div className="flex-grow">

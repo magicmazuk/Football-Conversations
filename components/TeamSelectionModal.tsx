@@ -66,7 +66,7 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({ isOpen, 
                             <li key={team}>
                                 <button
                                     onClick={() => handleSelect(team)}
-                                    className={`w-full text-left px-5 py-2.5 transition-colors text-text-primary ${team === currentFavorite ? 'bg-indigo-100 text-brand-primary font-semibold' : 'hover:bg-gray-100'}`}
+                                    className={`w-full text-left px-5 py-2.5 transition-colors text-text-primary ${team === currentFavorite ? 'bg-slate-200 text-text-primary font-semibold' : 'hover:bg-gray-100'}`}
                                 >
                                     {team}
                                 </button>
