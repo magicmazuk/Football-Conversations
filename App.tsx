@@ -4,12 +4,13 @@ import { NewsFeed } from './components/NewsFeed';
 import { ConversationGenerator } from './components/ConversationGenerator';
 import { WaterCoolerQuote } from './components/WaterCoolerQuote';
 import { NewsTopic } from './types';
-import { generateWaterCoolerQuote } from './services/geminiService';
+import { generateWaterCoolerQuote, healthCheck } from './services/geminiService';
 import { cacheService } from './services/cacheService';
 import { TeamSelectionModal } from './components/TeamSelectionModal';
 import { teams } from './data/teams';
 import { ApiKeyBanner } from './components/ApiKeyBanner';
 import { apiKeyManager } from './services/apiKeyManager';
+import { ErrorDisplay } from './components/ErrorDisplay';
 
 const FAVORITE_TEAM_KEY = 'watercooler-fc-favorite-team';
 
@@ -23,6 +24,27 @@ const App: React.FC = () => {
     return localStorage.getItem(FAVORITE_TEAM_KEY) || 'Celtic';
   });
   const [showApiKeyBanner, setShowApiKeyBanner] = useState(false);
+  const [globalError, setGlobalError] = useState<Error | null>(null);
+  const [healthCheckStatus, setHealthCheckStatus] = useState<'idle' | 'checking' | 'success' | 'failed'>('idle');
+
+  // Global unhandled rejection handler
+  useEffect(() => {
+    const handleRejection = (event: PromiseRejectionEvent) => {
+        console.error('Unhandled Promise Rejection:', event.reason);
+        if (event.reason instanceof Error) {
+            setGlobalError(event.reason);
+        } else {
+            setGlobalError(new Error(String(event.reason) || "An unknown rejection occurred"));
+        }
+    };
+
+    window.addEventListener('unhandledrejection', handleRejection);
+
+    return () => {
+        window.removeEventListener('unhandledrejection', handleRejection);
+    };
+  }, []);
+
 
   // Proactive API Key check on initial load
   useEffect(() => {
@@ -34,12 +56,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(FAVORITE_TEAM_KEY, favoriteTeam);
     
-    // If the current quote tone is the fan-specific one, update it to reflect the new team.
     if (quoteTone.startsWith('A Die-hard')) {
         setQuoteTone(`A Die-hard ${favoriteTeam} Fan`);
     }
-    // The key change on NewsFeed component will handle news refetching.
-  }, [favoriteTeam]);
+  }, [favoriteTeam, quoteTone]);
 
   const quoteTones = [
     { value: 'A Neutral Colleague', label: 'Neutral Colleague' },
@@ -52,7 +72,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const fetchQuote = async () => {
-      // Don't fetch if we know the API key is missing.
       if (!apiKeyManager.getApiKey()) {
         setQuote("Set your Gemini API key to get started!");
         setIsQuoteLoading(false);
@@ -76,14 +95,8 @@ const App: React.FC = () => {
         cacheService.set(cacheKey, newQuote);
       } catch (error: any) {
         console.error(error);
-        if (error.message.startsWith("Configuration Error:")) {
-            setShowApiKeyBanner(true);
-            setQuote('');
-            setQuoteError(null);
-        } else {
-            setQuoteError(error.message || "Couldn't fetch a witty quote, looks like the AI is on a tea break!");
-            setQuote('');
-        }
+        setQuoteError(error.message || "Couldn't fetch a witty quote, looks like the AI is on a tea break!");
+        setQuote('');
       } finally {
         setIsQuoteLoading(false);
       }
@@ -91,13 +104,22 @@ const App: React.FC = () => {
     fetchQuote();
   }, [quoteTone]);
 
-  const handleApiKeyError = () => {
-    setShowApiKeyBanner(true);
-  };
-
   const handleSetFavoriteTeam = (team: string) => {
     setFavoriteTeam(team);
-    setIsTeamModalOpen(false); // Close modal on selection
+    setIsTeamModalOpen(false);
+  };
+
+  const handleHealthCheck = async () => {
+    setHealthCheckStatus('checking');
+    setGlobalError(null);
+    try {
+        await healthCheck();
+        setHealthCheckStatus('success');
+        setTimeout(() => setHealthCheckStatus('idle'), 3000);
+    } catch (error: any) {
+        setHealthCheckStatus('failed');
+        // The global unhandledrejection handler will catch and display the error
+    }
   };
 
   const newsTopics: NewsTopic[] = [
@@ -139,7 +161,6 @@ const App: React.FC = () => {
           <ConversationGenerator 
             favoriteTeam={favoriteTeam} 
             onSetFavoriteTeam={setFavoriteTeam} 
-            onApiKeyError={handleApiKeyError} 
           />
           
           <div className="mt-10">
@@ -150,7 +171,6 @@ const App: React.FC = () => {
                     key={topic.id} 
                     topic={topic} 
                     onOpenTeamModal={() => setIsTeamModalOpen(true)}
-                    onApiKeyError={handleApiKeyError}
                   />
                 ))}
               </div>
@@ -158,6 +178,14 @@ const App: React.FC = () => {
 
           <footer className="text-center mt-10 text-text-secondary text-sm">
             <p>Powered by Gemini AI. Your weekly football briefing is ready.</p>
+            <div className="mt-2">
+                <button onClick={handleHealthCheck} disabled={healthCheckStatus === 'checking'} className="text-xs text-slate-400 hover:text-slate-600 underline disabled:cursor-wait disabled:no-underline">
+                    {healthCheckStatus === 'checking' && 'Checking API connection...'}
+                    {healthCheckStatus === 'idle' && 'Check API Connection'}
+                    {healthCheckStatus === 'failed' && 'Connection Check Failed. Click to retry.'}
+                    {healthCheckStatus === 'success' && '✅ Connection Successful!'}
+                </button>
+            </div>
           </footer>
         </main>
       </div>
@@ -168,6 +196,13 @@ const App: React.FC = () => {
           currentFavorite={favoriteTeam}
           onSetFavorite={handleSetFavoriteTeam}
       />
+       {globalError && (
+            <ErrorDisplay 
+                error={globalError} 
+                onClose={() => setGlobalError(null)}
+                onShowApiKeyForm={() => setShowApiKeyBanner(true)}
+            />
+        )}
     </>
   );
 };

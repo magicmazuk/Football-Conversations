@@ -16,10 +16,9 @@ import { apiKeyManager } from '../services/apiKeyManager';
 interface NewsFeedProps {
   topic: NewsTopic;
   onOpenTeamModal?: () => void;
-  onApiKeyError: () => void;
 }
 
-export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onApiKeyError }) => {
+export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) => {
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +38,8 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onAp
 
   const handleGenerate = useCallback(async (forceRefresh = false) => {
     if (!apiKeyManager.getApiKey()) {
-      onApiKeyError();
+      // The proactive banner in App.tsx handles this, but as a safeguard:
+      setError("Please set your Gemini API key to generate content.");
       return;
     }
     
@@ -64,16 +64,11 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onAp
       setSummaryData(data);
       cacheService.set(cacheKey, data);
     } catch (e: any) {
-      if (e.message.startsWith("Configuration Error:")) {
-        onApiKeyError();
-        setSummaryData(null);
-      } else {
-        setError(e.message || 'An unknown error occurred.');
-      }
+      setError(e.message || 'An unknown error occurred.');
     } finally {
       setIsLoading(false);
     }
-  }, [topic.id, topic.query, wordCount, topic.isFavorite, onApiKeyError]);
+  }, [topic.id, topic.query, wordCount, topic.isFavorite]);
   
   const favoriteTeamName = topic.isFavorite ? topic.title.replace(' Focus', '') : '';
 

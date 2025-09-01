@@ -15,10 +15,9 @@ import { apiKeyManager } from '../services/apiKeyManager';
 interface ConversationGeneratorProps {
     favoriteTeam: string;
     onSetFavoriteTeam: (team: string) => void;
-    onApiKeyError: () => void;
 }
 
-export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ favoriteTeam, onSetFavoriteTeam, onApiKeyError }) => {
+export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ favoriteTeam, onSetFavoriteTeam }) => {
     const [inputValue, setInputValue] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -51,7 +50,7 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
         if (!teamToSearch) return;
 
         if (!apiKeyManager.getApiKey()) {
-            onApiKeyError();
+            setError("Please set your Gemini API key to generate insights.");
             return;
         }
 
@@ -79,16 +78,11 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
             setTeamInsights(data);
             cacheService.set(cacheKey, data);
         } catch (e: any) {
-            if (e.message.startsWith("Configuration Error:")) {
-                onApiKeyError();
-                setTeamInsights(null);
-            } else {
-                setError(e.message || 'An unknown error occurred.');
-            }
+            setError(e.message || 'An unknown error occurred.');
         } finally {
             setIsLoading(false);
         }
-    }, [inputValue, onApiKeyError]);
+    }, [inputValue]);
 
     const isCurrentTeamFavorite = favoriteTeam === searchedTeam && !!searchedTeam;
 

@@ -10,53 +10,6 @@ const getAiInstance = () => {
   return new GoogleGenAI({ apiKey: API_KEY });
 };
 
-/**
- * Checks if an error from the Gemini API is related to an invalid API key or permissions.
- * This version is more robust to handle various error formats from the SDK and network stack.
- */
-const isApiKeyError = (error: any): boolean => {
-    // Defensively get a lowercase string representation of the error.
-    let message = '';
-    if (typeof error === 'string') {
-        message = error.toLowerCase();
-    } else if (typeof error === 'object' && error !== null) {
-        if (error.message) {
-            message = String(error.message).toLowerCase();
-        } else {
-            // As a fallback, stringify the object to search for clues.
-            try {
-                message = JSON.stringify(error).toLowerCase();
-            } catch (e) {
-                message = String(error).toLowerCase();
-            }
-        }
-    } else {
-        message = String(error).toLowerCase();
-    }
-
-    // Check for explicit 4xx status codes or permission-related statuses.
-    const hasApiClientError = /\[4\d{2}\]/.test(message) || /"code":\s?4\d{2}/.test(message) || message.includes('permission_denied');
-    if (hasApiClientError) {
-        return true;
-    }
-
-    // Check for common phrases related to key invalidity or network failures.
-    const keyPhrases = [
-        'api key not valid',
-        'api key is invalid',
-        'permission denied',
-        'the caller does not have permission',
-        'api_key_not_valid',
-        'referer restrictions',
-        'failed to fetch', // For CORS/network errors
-        'networkerror',    // For Firefox network errors
-        'could not connect',
-        'api key',         // Broadly catch any mention of 'api key' in an error
-    ];
-
-    return keyPhrases.some(phrase => message.includes(phrase));
-};
-
 const parseResponseText = (text: string): Omit<SummaryData, 'citations'> => {
   const headline = text.match(/\[HEADLINE\]([\s\S]*?)\[\/HEADLINE\]/)?.[1]?.trim() || '';
   const summary = text.match(/\[SUMMARY\]([\s\S]*?)\[\/SUMMARY\]/)?.[1]?.trim() || '';
@@ -179,13 +132,9 @@ export const generateFootballSummary = async (query: string, wordCount: number, 
     };
   } catch (error) {
     console.error("Error generating summary with Gemini:", error);
-    if (error instanceof Error && error.message.startsWith("Configuration Error:")) {
-        throw error;
-    }
-    if (isApiKeyError(error)) {
-        throw new Error("Configuration Error: The provided Google Gemini API key is invalid or has incorrect permissions for this website.");
-    }
-    throw new Error("Failed to generate summary. The AI service might be temporarily unavailable.");
+    // Re-throw a user-friendly error for the component's UI.
+    // The original error will be caught by the global unhandledrejection listener.
+    throw new Error("Failed to generate summary. The AI service might be temporarily unavailable or misconfigured.");
   }
 };
 
@@ -246,12 +195,6 @@ export const generateTeamInsights = async (teamName: string): Promise<TeamInsigh
 
   } catch (error) {
     console.error(`Error generating insights for ${teamName}:`, error);
-    if (error instanceof Error && error.message.startsWith("Configuration Error:")) {
-        throw error;
-    }
-    if (isApiKeyError(error)) {
-        throw new Error("Configuration Error: The provided Google Gemini API key is invalid or has incorrect permissions for this website.");
-    }
     throw new Error(`Failed to generate insights for ${teamName}.`);
   }
 };
@@ -277,16 +220,18 @@ export const generateWaterCoolerQuote = async (tone: string): Promise<string> =>
       model: "gemini-2.5-flash",
       contents: prompt,
     });
-    // Trim whitespace and remove any surrounding quotes the model might add.
     return response.text.trim().replace(/^"|"$/g, '');
   } catch (error) {
     console.error("Error generating water cooler quote:", error);
-    if (error instanceof Error && error.message.startsWith("Configuration Error:")) {
-        throw error;
-    }
-    if (isApiKeyError(error)) {
-        throw new Error("Configuration Error: The provided Google Gemini API key is invalid or has incorrect permissions for this website.");
-    }
     throw new Error("Failed to generate a quote.");
   }
+};
+
+export const healthCheck = async (): Promise<void> => {
+    const ai = getAiInstance();
+    // This is a lightweight call to verify authentication and basic API access.
+    await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: "test",
+    });
 };
