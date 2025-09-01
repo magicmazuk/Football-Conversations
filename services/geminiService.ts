@@ -52,7 +52,7 @@ export const generateFootballSummary = async (query: string, wordCount: number, 
     `;
 
     const prompt = `
-      You are a football news expert and a friendly colleague. Your name is "Footy AI".
+      You are a football news expert and a friendly colleague, acting as an AI assistant for the "Watercooler FC" app.
       Your task is to provide a summary of the most important football news from the past week about ${query}.
       The summary should be approximately ${wordCount} words.
 
@@ -108,7 +108,7 @@ export const generateFootballSummary = async (query: string, wordCount: number, 
 export const generateTeamInsights = async (teamName: string): Promise<TeamInsights> => {
   try {
     const prompt = `
-      You are a football expert named "Footy AI".
+      You are a football expert from "Watercooler FC".
       For the team "${teamName}", provide the following information based on the latest available data:
       1. The results of their last 2-3 matches, including the competition.
       2. 3-4 interesting and up-to-date conversation starters.
@@ -175,7 +175,7 @@ export const generateWaterCoolerQuote = async (tone: string): Promise<string> =>
       
       For example, if talking to "My Boss", the quote should be more insightful and professional.
       If talking to "A Funny Colleague", it can be more humorous or sarcastic.
-      If talking to "A Die-hard Celtic Fan", it should be something a Celtic fan would appreciate or find interesting.
+      If the tone includes a specific team name (e.g., "A Die-hard Liverpool Fan"), the quote should be something a fan of that team would appreciate or find interesting.
 
       It must be a single sentence.
       

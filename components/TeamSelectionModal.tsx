@@ -44,35 +44,35 @@ export const TeamSelectionModal: React.FC<TeamSelectionModalProps> = ({ isOpen, 
             aria-modal="true"
             aria-labelledby="modal-title"
         >
-            <div className="bg-light-card rounded-xl shadow-2xl w-full max-w-md m-4" onClick={e => e.stopPropagation()}>
-                <div className="p-6 border-b border-light-border flex justify-between items-center">
-                    <h2 id="modal-title" className="text-xl font-bold text-light-text">Select Your Favorite Team</h2>
-                    <button onClick={onClose} className="text-light-text-secondary hover:text-light-text p-1 rounded-full hover:bg-gray-200 transition-colors" aria-label="Close modal">
+            <div className="bg-card-bg rounded-xl shadow-2xl w-full max-w-md m-4" onClick={e => e.stopPropagation()}>
+                <div className="p-5 border-b border-border-color flex justify-between items-center">
+                    <h2 id="modal-title" className="text-xl font-bold text-text-primary">Select Your Favorite Team</h2>
+                    <button onClick={onClose} className="text-text-secondary hover:text-text-primary p-1 rounded-full hover:bg-gray-200 transition-colors" aria-label="Close modal">
                         <CloseIcon />
                     </button>
                 </div>
-                <div className="p-6">
+                <div className="p-5">
                     <input
                         type="text"
                         placeholder="Search for a team..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-4 py-2 border border-light-border rounded-md focus:ring-2 focus:ring-brand-green focus:outline-none mb-4"
+                        className="w-full px-4 py-2 border border-border-color rounded-md focus:ring-2 focus:ring-brand-primary focus:outline-none mb-4"
                         aria-label="Search for a team"
                         autoFocus
                     />
-                    <ul className="max-h-80 overflow-y-auto divide-y divide-light-border -mx-6">
+                    <ul className="max-h-80 overflow-y-auto divide-y divide-border-color -mx-5">
                         {filteredTeams.length > 0 ? filteredTeams.map(team => (
                             <li key={team}>
                                 <button
                                     onClick={() => handleSelect(team)}
-                                    className={`w-full text-left px-6 py-3 transition-colors text-light-text ${team === currentFavorite ? 'bg-green-100 text-brand-green font-semibold' : 'hover:bg-gray-100'}`}
+                                    className={`w-full text-left px-5 py-2.5 transition-colors text-text-primary ${team === currentFavorite ? 'bg-indigo-100 text-brand-primary font-semibold' : 'hover:bg-gray-100'}`}
                                 >
                                     {team}
                                 </button>
                             </li>
                         )) : (
-                            <li className="px-6 py-4 text-center text-light-text-secondary">No teams found.</li>
+                            <li className="px-5 py-4 text-center text-text-secondary">No teams found.</li>
                         )}
                     </ul>
                 </div>

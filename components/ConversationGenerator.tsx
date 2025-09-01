@@ -81,9 +81,9 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
     const isCurrentTeamFavorite = favoriteTeam === searchedTeam && !!searchedTeam;
 
     return (
-        <section className="p-6 bg-light-card rounded-xl border border-light-border shadow-sm">
-            <h2 className="text-2xl font-bold text-light-text mb-1">Conversation Generator</h2>
-            <p className="text-light-text-secondary mb-4">Pick a team to get AI-powered talking points.</p>
+        <section className="p-5 bg-card-bg rounded-xl border border-border-color shadow-sm">
+            <h2 className="text-2xl font-bold text-text-primary mb-1">Conversation Generator</h2>
+            <p className="text-text-secondary mb-3">Pick a team to get AI-powered talking points.</p>
 
             <div className="relative">
                 <input
@@ -95,11 +95,11 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
                     }}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate()}}
                     placeholder="Search for any team (e.g., Real Madrid)"
-                    className="w-full px-4 py-2 border border-light-border rounded-md focus:ring-2 focus:ring-brand-green focus:outline-none"
+                    className="w-full px-4 py-2 border border-border-color rounded-md focus:ring-2 focus:ring-brand-primary focus:outline-none"
                     aria-label="Search for a football team"
                 />
                 {showSuggestions && suggestions.length > 0 && (
-                    <ul className="absolute z-10 w-full mt-1 bg-light-card border border-light-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    <ul className="absolute z-10 w-full mt-1 bg-card-bg border border-border-color rounded-md shadow-lg max-h-60 overflow-y-auto">
                         {suggestions.map(team => (
                             <li
                                 key={team}
@@ -116,21 +116,21 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
             <button
                 onClick={() => handleGenerate()}
                 disabled={isLoading || !inputValue.trim()}
-                className="w-full mt-4 flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-brand-green hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-light-card focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                className="w-full mt-3 flex items-center justify-center px-6 py-2.5 border border-transparent text-base font-medium rounded-md text-white bg-brand-primary hover:bg-brand-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-card-bg focus:ring-brand-primary disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
                 {isLoading ? <LoadingSpinner className="-ml-1 mr-3 h-5 w-5 text-white" /> : <SparklesIcon />}
                 <span>{isLoading ? 'Generating...' : `Get Insights for ${inputValue.trim() || '...'}`}</span>
             </button>
 
-            <div className="mt-6">
-                {error && <div className="text-red-600 bg-red-100 p-4 rounded-lg border border-red-200">{error}</div>}
+            <div className="mt-4">
+                {error && <div className="text-red-600 bg-red-100 p-3 rounded-lg border border-red-200">{error}</div>}
                 
                 {teamInsights && !isLoading && (
-                     <div className="bg-gray-50 p-5 rounded-xl border border-light-border relative animate-fade-in">
+                     <div className="bg-gray-50 p-4 rounded-xl border border-border-color relative animate-fade-in">
                         <div className="absolute top-2 right-2 z-10">
                             <button 
                                 onClick={() => handleGenerate(true)} 
-                                className="text-light-text-secondary hover:text-light-text p-1.5 rounded-full hover:bg-gray-200 transition-colors" 
+                                className="text-text-secondary hover:text-text-primary p-1.5 rounded-full hover:bg-gray-200 transition-colors" 
                                 aria-label="Refresh insights"
                                 title="Refresh insights"
                             >
@@ -138,15 +138,15 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
                             </button>
                         </div>
 
-                         <div className="flex justify-between items-start mb-4">
-                            <h3 className="text-2xl font-bold text-light-text">{searchedTeam}</h3>
+                         <div className="flex justify-between items-start mb-3">
+                            <h3 className="text-2xl font-bold text-text-primary">{searchedTeam}</h3>
                             <button
                                 onClick={() => onSetFavoriteTeam(searchedTeam)}
                                 disabled={isCurrentTeamFavorite}
                                 className={`flex items-center text-sm font-semibold px-3 py-1.5 rounded-full transition-colors ${
                                     isCurrentTeamFavorite 
                                     ? 'bg-yellow-400 text-yellow-900 cursor-default' 
-                                    : 'bg-gray-200 text-light-text-secondary hover:bg-gray-300'
+                                    : 'bg-gray-200 text-text-secondary hover:bg-gray-300'
                                 }`}
                                 title={isCurrentTeamFavorite ? `${searchedTeam} is your favorite` : `Set ${searchedTeam} as your favorite`}
                             >
@@ -155,38 +155,38 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
                             </button>
                         </div>
                         
-                        <blockquote className="mb-6 text-center border-l-4 border-brand-green pl-4 italic">
-                             <p className="text-xl md:text-2xl font-semibold text-light-text leading-tight">
+                        <blockquote className="mb-4 text-center border-l-4 border-brand-primary pl-4 italic">
+                             <p className="text-xl md:text-2xl font-semibold text-text-primary leading-tight">
                                 "{teamInsights.quote}"
                             </p>
                         </blockquote>
 
-                        <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
+                        <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
                             <div>
-                                <h3 className="text-lg font-semibold text-light-text mb-3 flex items-center justify-between">
+                                <h3 className="text-lg font-semibold text-text-primary mb-2 flex items-center justify-between">
                                     <div className="flex items-center">
                                         <TrophyIcon className="w-5 h-5 text-gray-500"/>
                                         <span className="ml-2">Latest Results</span>
                                     </div>
                                     {teamInsights.form && (
-                                        <div className="flex items-center text-sm font-medium text-light-text-secondary">
+                                        <div className="flex items-center text-sm font-medium text-text-secondary">
                                             <TrendingUpIcon className="w-4 h-4 mr-1.5" />
                                             <span className="font-mono tracking-widest">{teamInsights.form}</span>
                                         </div>
                                     )}
                                 </h3>
-                                <ul className="space-y-2 list-none text-light-text-secondary">
+                                <ul className="space-y-2 list-none text-text-secondary">
                                     {teamInsights.results.map((result, index) => (
                                     <li key={index} className="text-sm">{result}</li>
                                     ))}
                                 </ul>
                             </div>
                             <div>
-                                <h3 className="text-lg font-semibold text-light-text mb-3 flex items-center">
+                                <h3 className="text-lg font-semibold text-text-primary mb-2 flex items-center">
                                     <ChatBubbleIcon />
                                     <span className="ml-2">Talking Points</span>
                                 </h3>
-                                <ul className="space-y-2 list-disc list-inside text-light-text">
+                                <ul className="space-y-2 list-disc list-inside text-text-primary">
                                     {teamInsights.starters.map((starter, index) => (
                                     <li key={index}>{starter}</li>
                                     ))}

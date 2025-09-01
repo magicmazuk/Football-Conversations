@@ -8,14 +8,14 @@ interface SummaryCardProps {
 
 export const SummaryCard: React.FC<SummaryCardProps> = ({ data }) => {
   return (
-    <div className="bg-gray-50 p-5 rounded-xl border border-light-border">
-      <h3 className="text-xl font-semibold text-brand-green mb-3 italic">
+    <div className="bg-gray-50 p-4 rounded-xl border border-border-color">
+      <h3 className="text-xl font-semibold text-brand-primary mb-2 italic">
         "{data.headline}"
       </h3>
-      <p className="text-light-text whitespace-pre-wrap leading-relaxed">{data.summary}</p>
+      <p className="text-text-primary whitespace-pre-wrap leading-relaxed">{data.summary}</p>
       {data.citations.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-light-border">
-          <h4 className="text-sm font-semibold text-light-text-secondary mb-2">Sources:</h4>
+        <div className="mt-4 pt-3 border-t border-border-color">
+          <h4 className="text-sm font-semibold text-text-secondary mb-2">Sources:</h4>
           <ul className="space-y-1">
             {data.citations.slice(0, 3).map((citation, index) => (
               <li key={index}>

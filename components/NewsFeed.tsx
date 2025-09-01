@@ -63,8 +63,8 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) =>
   }, [topic.id, topic.query, wordCount, topic.isFavorite]);
 
   return (
-    <div className="bg-light-card rounded-xl shadow-sm overflow-hidden flex flex-col border border-light-border h-full">
-      <div className={`p-6 bg-gradient-to-br ${topic.gradient} flex justify-between items-center`}>
+    <div className="bg-card-bg rounded-xl shadow-sm overflow-hidden flex flex-col border border-border-color h-full">
+      <div className={`p-5 bg-gradient-to-br ${topic.gradient} flex justify-between items-center`}>
         <h2 className="text-2xl font-bold text-white">{topic.title}</h2>
         {topic.isFavorite && onOpenTeamModal && (
             <button 
@@ -78,12 +78,12 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) =>
         )}
       </div>
 
-      <div className="p-6 flex-grow flex flex-col relative">
+      <div className="p-5 flex-grow flex flex-col relative">
         {summaryData && !isLoading && (
-            <div className="absolute top-4 right-4 z-10">
+            <div className="absolute top-3 right-3 z-10">
                 <button 
                   onClick={() => handleGenerate(true)} 
-                  className="text-light-text-secondary hover:text-light-text p-1.5 rounded-full hover:bg-gray-200 transition-colors" 
+                  className="text-text-secondary hover:text-text-primary p-1.5 rounded-full hover:bg-gray-200 transition-colors" 
                   aria-label="Refresh summary"
                   title="Refresh summary"
                 >
@@ -97,7 +97,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) =>
         <button
           onClick={() => handleGenerate()}
           disabled={isLoading}
-          className="w-full mt-4 flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-brand-green hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-light-card focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          className="w-full mt-4 flex items-center justify-center px-6 py-2.5 border border-transparent text-base font-medium rounded-md text-white bg-brand-primary hover:bg-brand-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-card-bg focus:ring-brand-primary disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
           {isLoading ? (
             <>
@@ -112,7 +112,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) =>
           )}
         </button>
 
-        <div className="mt-6 flex-grow flex flex-col">
+        <div className="mt-4 flex-grow flex flex-col">
           <div className="flex-grow">
             {error && <div className="text-red-600 bg-red-100 p-4 rounded-lg border border-red-200">{error}</div>}
             
@@ -127,15 +127,15 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) =>
             )}
             
             {!isLoading && !summaryData && !error && (
-               <div className="text-center text-light-text-secondary h-full flex items-center justify-center flex-col p-4">
+               <div className="text-center text-text-secondary h-full flex items-center justify-center flex-col p-4">
                   <SparklesIcon className="w-10 h-10 mb-2"/>
                   <p>Ready to catch up? <br/> Hit the button to get your summary.</p>
                </div>
             )}
           </div>
-           <div className="text-xs text-light-text-secondary text-center mt-auto pt-6">
-              <div className="inline-flex items-center justify-center px-3 py-1 bg-gray-100 rounded-full border border-light-border">
-                  <SparklesIcon className="w-4 h-4 mr-1.5 text-brand-green" />
+           <div className="text-xs text-text-secondary text-center mt-auto pt-4">
+              <div className="inline-flex items-center justify-center px-3 py-1 bg-gray-100 rounded-full border border-border-color">
+                  <SparklesIcon className="w-4 h-4 mr-1.5 text-brand-primary" />
                   <span>AI-Generated Briefing</span>
               </div>
           </div>

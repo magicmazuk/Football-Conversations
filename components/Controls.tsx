@@ -14,18 +14,18 @@ const options = [
 export const Controls: React.FC<ControlsProps> = ({ wordCount, setWordCount }) => {
   return (
     <div>
-      <label className="block text-sm font-medium text-light-text-secondary mb-2">
+      <label className="block text-sm font-medium text-text-secondary mb-2">
         Summary Length
       </label>
-      <div className="flex w-full bg-gray-100 rounded-lg p-1 border border-light-border">
+      <div className="flex w-full bg-gray-100 rounded-lg p-1 border border-border-color">
         {options.map((option) => (
           <button
             key={option.words}
             onClick={() => setWordCount(option.words)}
-            className={`w-full text-center text-sm font-semibold py-1.5 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-brand-green ${
+            className={`w-full text-center text-sm font-semibold py-1 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-brand-primary ${
               wordCount === option.words
-                ? 'bg-brand-green text-white shadow'
-                : 'text-light-text-secondary hover:bg-gray-200'
+                ? 'bg-brand-primary text-white shadow'
+                : 'text-text-secondary hover:bg-gray-200'
             }`}
             aria-pressed={wordCount === option.words}
           >

@@ -9,7 +9,7 @@ import { cacheService } from './services/cacheService';
 import { TeamSelectionModal } from './components/TeamSelectionModal';
 import { teams } from './data/teams';
 
-const FAVORITE_TEAM_KEY = 'footy-feed-favorite-team';
+const FAVORITE_TEAM_KEY = 'watercooler-fc-favorite-team';
 
 const App: React.FC = () => {
   const [quote, setQuote] = useState('');
@@ -22,15 +22,19 @@ const App: React.FC = () => {
 
   useEffect(() => {
     localStorage.setItem(FAVORITE_TEAM_KEY, favoriteTeam);
-    // When favorite team changes, we might want to refetch news,
-    // but the key change on NewsFeed component will handle this.
+    
+    // If the current quote tone is the fan-specific one, update it to reflect the new team.
+    if (quoteTone.startsWith('A Die-hard')) {
+        setQuoteTone(`A Die-hard ${favoriteTeam} Fan`);
+    }
+    // The key change on NewsFeed component will handle news refetching.
   }, [favoriteTeam]);
 
   const quoteTones = [
     { value: 'A Neutral Colleague', label: 'Neutral Colleague' },
     { value: 'My Boss', label: 'My Boss' },
     { value: 'A Funny Colleague', label: 'Funny Colleague' },
-    { value: 'A Die-hard Celtic Fan', label: 'Celtic Fan' },
+    { value: `A Die-hard ${favoriteTeam} Fan`, label: `${favoriteTeam} Fan` },
     { value: 'A Rival Fan', label: 'Rival Fan' },
     { value: 'Someone New to Football', label: 'Football Newbie' },
   ];
@@ -71,28 +75,28 @@ const App: React.FC = () => {
       id: `favorite-${favoriteTeam.toLowerCase().replace(/\s+/g, '-')}`,
       title: `${favoriteTeam} Focus`,
       query: `latest news and developments about ${favoriteTeam} from the past week`,
-      gradient: "from-green-500 to-emerald-600",
+      gradient: "from-gray-700 to-gray-900",
       isFavorite: true,
     },
     {
       id: 'scottish',
       title: "Scottish Football Roundup",
       query: "latest major news and results in Scottish football from the past week",
-      gradient: "from-blue-500 to-indigo-600"
+      gradient: "from-slate-500 to-slate-700"
     },
     {
       id: 'world',
       title: "World Football Highlights",
       query: "most significant world football news, transfers, and results from the past week",
-      gradient: "from-purple-500 to-violet-600"
+      gradient: "from-indigo-500 to-indigo-700"
     }
   ];
 
   return (
     <>
-      <div className="min-h-screen bg-light-bg font-sans">
+      <div className="min-h-screen bg-page-bg font-sans">
         <Header />
-        <main className="container mx-auto p-4 md:p-8">
+        <main className="container mx-auto p-4 md:p-6">
           <WaterCoolerQuote 
             quote={quote} 
             isLoading={isQuoteLoading}
@@ -102,9 +106,9 @@ const App: React.FC = () => {
           />
           <ConversationGenerator favoriteTeam={favoriteTeam} onSetFavoriteTeam={setFavoriteTeam} />
           
-          <div className="mt-12">
-              <h2 className="text-3xl font-bold text-light-text mb-6">Your Weekly Briefing</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="mt-10">
+              <h2 className="text-3xl font-bold text-text-primary mb-4">Your Weekly Briefing</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {newsTopics.map((topic) => (
                   <NewsFeed 
                     key={topic.id} 
@@ -115,7 +119,7 @@ const App: React.FC = () => {
               </div>
           </div>
 
-          <footer className="text-center mt-12 text-light-text-secondary text-sm">
+          <footer className="text-center mt-10 text-text-secondary text-sm">
             <p>Powered by Gemini AI. Your weekly football briefing is ready.</p>
           </footer>
         </main>

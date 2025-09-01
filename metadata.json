@@ -1,5 +1,5 @@
 {
-  "name": "AI Football News Companion",
-  "description": "An AI-powered dashboard that summarizes football news and generates relevant conversation starters for any major European team, keeping you in the loop.",
+  "name": "Watercooler FC",
+  "description": "Your AI-powered football briefing for office banter. Get summaries and conversation starters for any major European team.",
   "requestFramePermissions": []
 }

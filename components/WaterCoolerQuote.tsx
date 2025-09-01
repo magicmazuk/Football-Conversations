@@ -11,18 +11,18 @@ interface WaterCoolerQuoteProps {
 
 export const WaterCoolerQuote: React.FC<WaterCoolerQuoteProps> = ({ quote, isLoading, tones, selectedTone, onToneChange }) => {
     return (
-        <section className="mb-8 p-6 bg-light-card rounded-xl border border-light-border shadow-sm">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4">
-                <h2 className="text-sm font-semibold text-brand-green uppercase tracking-wider">
+        <section className="mb-6 p-5 bg-card-bg rounded-xl border border-border-color shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-3">
+                <h2 className="text-sm font-semibold text-brand-primary uppercase tracking-wider">
                     Quote of the Day
                 </h2>
                 <div className="flex items-center self-start sm:self-center">
-                    <label htmlFor="tone-select" className="text-sm text-light-text-secondary mr-2 whitespace-nowrap">Talking to:</label>
+                    <label htmlFor="tone-select" className="text-sm text-text-secondary mr-2 whitespace-nowrap">Talking to:</label>
                     <select
                         id="tone-select"
                         value={selectedTone}
                         onChange={(e) => onToneChange(e.target.value)}
-                        className="text-sm bg-gray-100 border-light-border rounded-md py-1 pl-2 pr-8 focus:ring-2 focus:ring-brand-green focus:outline-none transition-all"
+                        className="text-sm bg-gray-100 border-border-color rounded-md py-1 pl-2 pr-8 focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all"
                         aria-label="Select quote tone"
                     >
                         {tones.map(tone => (
@@ -34,10 +34,10 @@ export const WaterCoolerQuote: React.FC<WaterCoolerQuoteProps> = ({ quote, isLoa
             <div className="text-center">
                 {isLoading ? (
                      <div className="flex justify-center items-center h-6">
-                        <LoadingSpinner className="h-6 w-6 text-light-text-secondary" />
+                        <LoadingSpinner className="h-6 w-6 text-text-secondary" />
                      </div>
                 ) : (
-                    <p className="text-lg italic text-light-text-secondary">
+                    <p className="text-lg italic text-text-secondary">
                         "{quote}"
                     </p>
                 )}
