@@ -11,14 +11,17 @@ import { TrophyIcon } from './icons/TrophyIcon';
 import { TrendingUpIcon } from './icons/TrendingUpIcon';
 import { StarIcon } from './icons/StarIcon';
 import { apiKeyManager } from '../services/apiKeyManager';
+import { getFriendlyErrorMessage } from '../services/errorService';
 
 interface ConversationGeneratorProps {
     favoriteTeam: string;
     onSetFavoriteTeam: (team: string) => void;
     onGlobalError: (error: unknown) => void;
+    isRateLimited: boolean;
+    cooldown: number;
 }
 
-export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ favoriteTeam, onSetFavoriteTeam, onGlobalError }) => {
+export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ favoriteTeam, onSetFavoriteTeam, onGlobalError, isRateLimited, cooldown }) => {
     const [inputValue, setInputValue] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -80,7 +83,7 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
             cacheService.set(cacheKey, data);
         } catch (e: unknown) {
             const error = e instanceof Error ? e : new Error(String(e) || 'An unknown error occurred.');
-            setError(error.message);
+            setError(getFriendlyErrorMessage(error));
             onGlobalError(error);
         } finally {
             setIsLoading(false);
@@ -124,12 +127,18 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
 
             <button
                 onClick={() => handleGenerate()}
-                disabled={isLoading || !inputValue.trim()}
+                disabled={isLoading || !inputValue.trim() || isRateLimited}
                 className="w-full mt-3 flex items-center justify-center px-6 py-2.5 border border-transparent text-base font-medium rounded-md text-white bg-brand-primary hover:bg-brand-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-card-bg focus:ring-brand-primary disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
                 {isLoading ? <LoadingSpinner className="-ml-1 mr-3 h-5 w-5 text-white" /> : <SparklesIcon />}
                 <span>{isLoading ? 'Generating...' : `Get Insights for ${inputValue.trim() || '...'}`}</span>
             </button>
+
+            {isRateLimited && (
+                <p className="text-center text-sm text-yellow-600 mt-2 animate-fade-in">
+                    Rate limit active. Please try again in {cooldown}s.
+                </p>
+            )}
 
             <div className="mt-4">
                 {error && <div className="text-red-600 bg-red-100 p-3 rounded-lg border border-red-200">{error}</div>}

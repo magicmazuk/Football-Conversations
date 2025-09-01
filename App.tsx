@@ -11,6 +11,7 @@ import { teams } from './data/teams';
 import { ApiKeyBanner } from './components/ApiKeyBanner';
 import { apiKeyManager } from './services/apiKeyManager';
 import { ErrorDisplay } from './components/ErrorDisplay';
+import { getFriendlyErrorMessage, isRateLimitError } from './services/errorService';
 
 const FAVORITE_TEAM_KEY = 'watercooler-fc-favorite-team';
 
@@ -26,12 +27,22 @@ const App: React.FC = () => {
   const [showApiKeyBanner, setShowApiKeyBanner] = useState(false);
   const [globalError, setGlobalError] = useState<Error | null>(null);
   const [healthCheckStatus, setHealthCheckStatus] = useState<'idle' | 'checking' | 'success' | 'failed'>('idle');
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown > 0) {
+        const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+        return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
+
+  const isRateLimited = cooldown > 0;
 
   const handleApiError = (error: unknown) => {
-    if (error instanceof Error) {
-        setGlobalError(error);
-    } else {
-        setGlobalError(new Error(String(error) || "An unknown error occurred"));
+    const err = error instanceof Error ? error : new Error(String(error) || "An unknown error occurred");
+    setGlobalError(err);
+    if (isRateLimitError(err) && cooldown === 0) {
+        setCooldown(60); // Start 60-second cooldown
     }
   };
 
@@ -76,6 +87,13 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const fetchQuote = async () => {
+      if (isRateLimited) {
+        setQuote(`API rate limit active. Please try again in ${cooldown} seconds.`);
+        setIsQuoteLoading(false);
+        setQuoteError(null);
+        return;
+      }
+
       if (!apiKeyManager.getApiKey()) {
         setQuote("Set your Gemini API key to get started!");
         setIsQuoteLoading(false);
@@ -99,8 +117,7 @@ const App: React.FC = () => {
         cacheService.set(cacheKey, newQuote);
       } catch (error: any) {
         console.error(error);
-        const errorMessage = error instanceof Error ? error.message : "Couldn't fetch a witty quote, looks like the AI is on a tea break!";
-        setQuoteError(errorMessage);
+        setQuoteError(getFriendlyErrorMessage(error));
         setQuote('');
         handleApiError(error);
       } finally {
@@ -108,7 +125,7 @@ const App: React.FC = () => {
       }
     };
     fetchQuote();
-  }, [quoteTone]);
+  }, [quoteTone, isRateLimited, cooldown]);
 
   const handleSetFavoriteTeam = (team: string) => {
     setFavoriteTeam(team);
@@ -162,12 +179,15 @@ const App: React.FC = () => {
             error={quoteError}
             tones={quoteTones}
             selectedTone={quoteTone}
-            onToneChange={setQuoteTone} 
+            onToneChange={setQuoteTone}
+            isRateLimited={isRateLimited}
           />
           <ConversationGenerator 
             favoriteTeam={favoriteTeam} 
             onSetFavoriteTeam={setFavoriteTeam}
             onGlobalError={handleApiError}
+            isRateLimited={isRateLimited}
+            cooldown={cooldown}
           />
           
           <div className="mt-10">
@@ -179,6 +199,8 @@ const App: React.FC = () => {
                     topic={topic} 
                     onOpenTeamModal={() => setIsTeamModalOpen(true)}
                     onGlobalError={handleApiError}
+                    isRateLimited={isRateLimited}
+                    cooldown={cooldown}
                   />
                 ))}
               </div>

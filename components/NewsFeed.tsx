@@ -12,14 +12,17 @@ import { LatestResults } from './LatestResults';
 import { PencilIcon } from './icons/PencilIcon';
 import { LeagueTable } from './LeagueTable';
 import { apiKeyManager } from '../services/apiKeyManager';
+import { getFriendlyErrorMessage } from '../services/errorService';
 
 interface NewsFeedProps {
   topic: NewsTopic;
   onOpenTeamModal?: () => void;
   onGlobalError: (error: unknown) => void;
+  isRateLimited: boolean;
+  cooldown: number;
 }
 
-export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGlobalError }) => {
+export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGlobalError, isRateLimited, cooldown }) => {
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +69,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGl
       cacheService.set(cacheKey, data);
     } catch (e: unknown) {
       const error = e instanceof Error ? e : new Error(String(e) || 'An unknown error occurred.');
-      setError(error.message);
+      setError(getFriendlyErrorMessage(error));
       onGlobalError(error);
     } finally {
       setIsLoading(false);
@@ -118,7 +121,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGl
         {!summaryData && (
           <button
             onClick={() => handleGenerate()}
-            disabled={isLoading}
+            disabled={isLoading || isRateLimited}
             className="w-full mt-4 flex items-center justify-center px-6 py-2.5 border border-transparent text-base font-medium rounded-md text-white bg-brand-primary hover:bg-brand-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-card-bg focus:ring-brand-primary disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? (
@@ -126,6 +129,8 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGl
                 <LoadingSpinner className="-ml-1 mr-3 h-5 w-5 text-white" />
                 <span>Generating...</span>
               </>
+            ) : isRateLimited ? (
+                <span>On Cooldown ({cooldown}s)...</span>
             ) : (
               <>
                 <SparklesIcon />

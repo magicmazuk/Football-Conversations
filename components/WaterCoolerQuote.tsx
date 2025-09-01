@@ -8,9 +8,10 @@ interface WaterCoolerQuoteProps {
     selectedTone: string;
     onToneChange: (tone: string) => void;
     error?: string | null;
+    isRateLimited: boolean;
 }
 
-export const WaterCoolerQuote: React.FC<WaterCoolerQuoteProps> = ({ quote, isLoading, tones, selectedTone, onToneChange, error }) => {
+export const WaterCoolerQuote: React.FC<WaterCoolerQuoteProps> = ({ quote, isLoading, tones, selectedTone, onToneChange, error, isRateLimited }) => {
     return (
         <section className="mb-6 p-5 bg-card-bg rounded-xl border border-border-color shadow-sm">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-3">
@@ -23,7 +24,8 @@ export const WaterCoolerQuote: React.FC<WaterCoolerQuoteProps> = ({ quote, isLoa
                         id="tone-select"
                         value={selectedTone}
                         onChange={(e) => onToneChange(e.target.value)}
-                        className="text-sm bg-gray-100 border-border-color rounded-md py-1 pl-2 pr-8 focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all"
+                        disabled={isRateLimited}
+                        className="text-sm bg-gray-100 border-border-color rounded-md py-1 pl-2 pr-8 focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all disabled:bg-gray-200 disabled:cursor-not-allowed"
                         aria-label="Select quote tone"
                     >
                         {tones.map(tone => (
