@@ -17,8 +17,8 @@ const isApiKeyError = (error: any): boolean => {
     if (error instanceof Error) {
         const message = error.message.toLowerCase();
         
-        // Google's API client often includes a status code like [400] or [403] for client-side errors.
-        const hasApiClientError = /\[(400|403)\]/.test(message);
+        // Google's API client often includes a status code. Check for any 4xx client-side error.
+        const hasApiClientError = /\[4\d{2}\]/.test(message); // Matches [400], [403], [429], etc.
         if (hasApiClientError) {
             return true;
         }
@@ -29,7 +29,8 @@ const isApiKeyError = (error: any): boolean => {
             'api key is invalid',
             'permission denied',
             'the caller does not have permission',
-            'api_key_not_valid'
+            'api_key_not_valid',
+            'referer restrictions' // More specific check for a common deployment issue
         ];
         
         return keyPhrases.some(phrase => message.includes(phrase));
