@@ -1,0 +1,5 @@
+{
+  "name": "AI Football News Companion",
+  "description": "An AI-powered dashboard that summarizes football news and generates relevant conversation starters for any major European team, keeping you in the loop.",
+  "requestFramePermissions": []
+}
