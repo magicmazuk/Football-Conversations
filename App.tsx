@@ -14,6 +14,7 @@ const FAVORITE_TEAM_KEY = 'watercooler-fc-favorite-team';
 const App: React.FC = () => {
   const [quote, setQuote] = useState('');
   const [isQuoteLoading, setIsQuoteLoading] = useState(true);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
   const [quoteTone, setQuoteTone] = useState('A Neutral Colleague');
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [favoriteTeam, setFavoriteTeam] = useState<string>(() => {
@@ -42,6 +43,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetchQuote = async () => {
       setIsQuoteLoading(true);
+      setQuoteError(null);
       const cacheKey = `water-cooler-quote-${quoteTone.replace(/\s+/g, '-').toLowerCase()}`;
       const cachedQuote = cacheService.get<string>(cacheKey);
 
@@ -55,9 +57,10 @@ const App: React.FC = () => {
         const newQuote = await generateWaterCoolerQuote(quoteTone);
         setQuote(newQuote);
         cacheService.set(cacheKey, newQuote);
-      } catch (error) {
+      } catch (error: any) {
         console.error(error);
-        setQuote("Couldn't fetch a witty quote, looks like the AI is on a tea break!");
+        setQuoteError(error.message || "Couldn't fetch a witty quote, looks like the AI is on a tea break!");
+        setQuote('');
       } finally {
         setIsQuoteLoading(false);
       }
@@ -100,6 +103,7 @@ const App: React.FC = () => {
           <WaterCoolerQuote 
             quote={quote} 
             isLoading={isQuoteLoading}
+            error={quoteError}
             tones={quoteTones}
             selectedTone={quoteTone}
             onToneChange={setQuoteTone} 

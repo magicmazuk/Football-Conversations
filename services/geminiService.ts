@@ -1,13 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 import { SummaryData, Citation, TeamInsights, LeagueTableRow } from '../types';
 
-const API_KEY = process.env.API_KEY;
+const getAiInstance = () => {
+  const API_KEY = process.env.API_KEY;
+  if (!API_KEY) {
+    throw new Error("Configuration Error: The Google Gemini API key is missing. Please set the API_KEY environment variable to use the AI features.");
+  }
+  return new GoogleGenAI({ apiKey: API_KEY });
+};
 
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 const parseResponseText = (text: string): Omit<SummaryData, 'citations'> => {
   const headline = text.match(/\[HEADLINE\]([\s\S]*?)\[\/HEADLINE\]/)?.[1]?.trim() || '';
@@ -55,6 +56,7 @@ const parseResponseText = (text: string): Omit<SummaryData, 'citations'> => {
 };
 
 export const generateFootballSummary = async (query: string, wordCount: number, isFavoriteQuery: boolean = false): Promise<SummaryData> => {
+  const ai = getAiInstance();
   try {
 
     const favoriteTeamAddon = `
@@ -130,11 +132,15 @@ export const generateFootballSummary = async (query: string, wordCount: number, 
     };
   } catch (error) {
     console.error("Error generating summary with Gemini:", error);
-    throw new Error("Failed to generate summary. Please check your API key and connection.");
+    if (error instanceof Error && error.message.includes("API key")) {
+        throw error;
+    }
+    throw new Error("Failed to generate summary. Please check your connection and try again.");
   }
 };
 
 export const generateTeamInsights = async (teamName: string): Promise<TeamInsights> => {
+  const ai = getAiInstance();
   try {
     const prompt = `
       You are a football expert from "Watercooler FC".
@@ -190,11 +196,15 @@ export const generateTeamInsights = async (teamName: string): Promise<TeamInsigh
 
   } catch (error) {
     console.error(`Error generating insights for ${teamName}:`, error);
+    if (error instanceof Error && error.message.includes("API key")) {
+        throw error;
+    }
     throw new Error(`Failed to generate insights for ${teamName}.`);
   }
 };
 
 export const generateWaterCoolerQuote = async (tone: string): Promise<string> => {
+  const ai = getAiInstance();
   try {
     const prompt = `
       You are a witty football pundit with a knack for tailoring your comments to your audience.
@@ -218,6 +228,9 @@ export const generateWaterCoolerQuote = async (tone: string): Promise<string> =>
     return response.text.trim().replace(/^"|"$/g, '');
   } catch (error) {
     console.error("Error generating water cooler quote:", error);
+    if (error instanceof Error && error.message.includes("API key")) {
+        throw error;
+    }
     throw new Error("Failed to generate a quote.");
   }
 };

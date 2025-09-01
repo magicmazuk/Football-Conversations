@@ -7,9 +7,10 @@ interface WaterCoolerQuoteProps {
     tones: { value: string; label: string }[];
     selectedTone: string;
     onToneChange: (tone: string) => void;
+    error?: string | null;
 }
 
-export const WaterCoolerQuote: React.FC<WaterCoolerQuoteProps> = ({ quote, isLoading, tones, selectedTone, onToneChange }) => {
+export const WaterCoolerQuote: React.FC<WaterCoolerQuoteProps> = ({ quote, isLoading, tones, selectedTone, onToneChange, error }) => {
     return (
         <section className="mb-6 p-5 bg-card-bg rounded-xl border border-border-color shadow-sm">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-3">
@@ -31,11 +32,14 @@ export const WaterCoolerQuote: React.FC<WaterCoolerQuoteProps> = ({ quote, isLoa
                     </select>
                 </div>
             </div>
-            <div className="text-center">
+            <div className="text-center min-h-[28px] flex items-center justify-center">
                 {isLoading ? (
-                     <div className="flex justify-center items-center h-6">
-                        <LoadingSpinner className="h-6 w-6 text-text-secondary" />
-                     </div>
+                     <LoadingSpinner className="h-6 w-6 text-text-secondary" />
+                ) : error ? (
+                    <div className="text-red-600 bg-red-100 p-3 rounded-lg border border-red-200 text-sm text-left w-full">
+                        <p className="font-bold">Oops, quote generation failed!</p>
+                        <p>{error}</p>
+                    </div>
                 ) : (
                     <p className="text-lg italic text-text-secondary">
                         "{quote}"
