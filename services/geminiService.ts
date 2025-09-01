@@ -11,34 +11,51 @@ const getAiInstance = () => {
 };
 
 /**
- * Checks if the error from the Gemini API is related to an invalid API key or permissions.
+ * Checks if an error from the Gemini API is related to an invalid API key or permissions.
+ * This version is more robust to handle various error formats from the SDK and network stack.
  */
 const isApiKeyError = (error: any): boolean => {
-    if (error instanceof Error) {
-        const message = error.message.toLowerCase();
-        
-        // Google's API client often includes a status code. Check for any 4xx client-side error.
-        const hasApiClientError = /\[4\d{2}\]/.test(message); // Matches [400], [403], [429], etc.
-        if (hasApiClientError) {
-            return true;
+    // Defensively get a lowercase string representation of the error.
+    let message = '';
+    if (typeof error === 'string') {
+        message = error.toLowerCase();
+    } else if (typeof error === 'object' && error !== null) {
+        if (error.message) {
+            message = String(error.message).toLowerCase();
+        } else {
+            // As a fallback, stringify the object to search for clues.
+            try {
+                message = JSON.stringify(error).toLowerCase();
+            } catch (e) {
+                message = String(error).toLowerCase();
+            }
         }
-
-        // Check for common phrases related to key invalidity, permissions, or network failures
-        // common in deployed environments with restricted keys.
-        const keyPhrases = [
-            'api key not valid', 
-            'api key is invalid',
-            'permission denied',
-            'the caller does not have permission',
-            'api_key_not_valid',
-            'referer restrictions',
-            'failed to fetch' // Catches CORS/network errors often related to key restrictions
-        ];
-        
-        return keyPhrases.some(phrase => message.includes(phrase));
+    } else {
+        message = String(error).toLowerCase();
     }
-    return false;
-}
+
+    // Check for explicit 4xx status codes or permission-related statuses.
+    const hasApiClientError = /\[4\d{2}\]/.test(message) || /"code":\s?4\d{2}/.test(message) || message.includes('permission_denied');
+    if (hasApiClientError) {
+        return true;
+    }
+
+    // Check for common phrases related to key invalidity or network failures.
+    const keyPhrases = [
+        'api key not valid',
+        'api key is invalid',
+        'permission denied',
+        'the caller does not have permission',
+        'api_key_not_valid',
+        'referer restrictions',
+        'failed to fetch', // For CORS/network errors
+        'networkerror',    // For Firefox network errors
+        'could not connect',
+        'api key',         // Broadly catch any mention of 'api key' in an error
+    ];
+
+    return keyPhrases.some(phrase => message.includes(phrase));
+};
 
 const parseResponseText = (text: string): Omit<SummaryData, 'citations'> => {
   const headline = text.match(/\[HEADLINE\]([\s\S]*?)\[\/HEADLINE\]/)?.[1]?.trim() || '';
