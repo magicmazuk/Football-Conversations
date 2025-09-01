@@ -9,15 +9,22 @@ import { ChatBubbleIcon } from './icons/ChatBubbleIcon';
 import { RefreshIcon } from './icons/RefreshIcon';
 import { TrophyIcon } from './icons/TrophyIcon';
 import { TrendingUpIcon } from './icons/TrendingUpIcon';
+import { StarIcon } from './icons/StarIcon';
 
+interface ConversationGeneratorProps {
+    favoriteTeam: string;
+    onSetFavoriteTeam: (team: string) => void;
+}
 
-export const ConversationGenerator: React.FC = () => {
+export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ favoriteTeam, onSetFavoriteTeam }) => {
     const [inputValue, setInputValue] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [teamInsights, setTeamInsights] = useState<TeamInsights | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [searchedTeam, setSearchedTeam] = useState('');
+
 
     useEffect(() => {
         if (inputValue.length > 1) {
@@ -44,6 +51,7 @@ export const ConversationGenerator: React.FC = () => {
         setIsLoading(true);
         setError(null);
         setShowSuggestions(false);
+        setSearchedTeam(teamToSearch);
         
         const cacheKey = `insights-${teamToSearch.replace(/\s+/g, '-').toLowerCase()}`;
 
@@ -69,6 +77,8 @@ export const ConversationGenerator: React.FC = () => {
             setIsLoading(false);
         }
     }, [inputValue]);
+
+    const isCurrentTeamFavorite = favoriteTeam === searchedTeam && !!searchedTeam;
 
     return (
         <section className="p-6 bg-light-card rounded-xl border border-light-border shadow-sm">
@@ -125,6 +135,23 @@ export const ConversationGenerator: React.FC = () => {
                                 title="Refresh insights"
                             >
                                 <RefreshIcon />
+                            </button>
+                        </div>
+
+                         <div className="flex justify-between items-start mb-4">
+                            <h3 className="text-2xl font-bold text-light-text">{searchedTeam}</h3>
+                            <button
+                                onClick={() => onSetFavoriteTeam(searchedTeam)}
+                                disabled={isCurrentTeamFavorite}
+                                className={`flex items-center text-sm font-semibold px-3 py-1.5 rounded-full transition-colors ${
+                                    isCurrentTeamFavorite 
+                                    ? 'bg-yellow-400 text-yellow-900 cursor-default' 
+                                    : 'bg-gray-200 text-light-text-secondary hover:bg-gray-300'
+                                }`}
+                                title={isCurrentTeamFavorite ? `${searchedTeam} is your favorite` : `Set ${searchedTeam} as your favorite`}
+                            >
+                                <StarIcon className="w-4 h-4" filled={isCurrentTeamFavorite} />
+                                <span className="ml-1.5">{isCurrentTeamFavorite ? 'Favorite' : 'Set as Favorite'}</span>
                             </button>
                         </div>
                         

@@ -6,12 +6,25 @@ import { WaterCoolerQuote } from './components/WaterCoolerQuote';
 import { NewsTopic } from './types';
 import { generateWaterCoolerQuote } from './services/geminiService';
 import { cacheService } from './services/cacheService';
+import { TeamSelectionModal } from './components/TeamSelectionModal';
+import { teams } from './data/teams';
 
+const FAVORITE_TEAM_KEY = 'footy-feed-favorite-team';
 
 const App: React.FC = () => {
   const [quote, setQuote] = useState('');
   const [isQuoteLoading, setIsQuoteLoading] = useState(true);
   const [quoteTone, setQuoteTone] = useState('A Neutral Colleague');
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [favoriteTeam, setFavoriteTeam] = useState<string>(() => {
+    return localStorage.getItem(FAVORITE_TEAM_KEY) || 'Celtic';
+  });
+
+  useEffect(() => {
+    localStorage.setItem(FAVORITE_TEAM_KEY, favoriteTeam);
+    // When favorite team changes, we might want to refetch news,
+    // but the key change on NewsFeed component will handle this.
+  }, [favoriteTeam]);
 
   const quoteTones = [
     { value: 'A Neutral Colleague', label: 'Neutral Colleague' },
@@ -48,12 +61,18 @@ const App: React.FC = () => {
     fetchQuote();
   }, [quoteTone]);
 
+  const handleSetFavoriteTeam = (team: string) => {
+    setFavoriteTeam(team);
+    setIsTeamModalOpen(false); // Close modal on selection
+  };
+
   const newsTopics: NewsTopic[] = [
     {
-      id: 'celtic',
-      title: "Celtic FC Focus",
-      query: "latest news and developments about Celtic FC from the past week",
-      gradient: "from-green-500 to-emerald-600"
+      id: `favorite-${favoriteTeam.toLowerCase().replace(/\s+/g, '-')}`,
+      title: `${favoriteTeam} Focus`,
+      query: `latest news and developments about ${favoriteTeam} from the past week`,
+      gradient: "from-green-500 to-emerald-600",
+      isFavorite: true,
     },
     {
       id: 'scottish',
@@ -70,32 +89,45 @@ const App: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-light-bg font-sans">
-      <Header />
-      <main className="container mx-auto p-4 md:p-8">
-        <WaterCoolerQuote 
-          quote={quote} 
-          isLoading={isQuoteLoading}
-          tones={quoteTones}
-          selectedTone={quoteTone}
-          onToneChange={setQuoteTone} 
-        />
-        <ConversationGenerator />
-        
-        <div className="mt-12">
-            <h2 className="text-3xl font-bold text-light-text mb-6">Your Weekly Briefing</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {newsTopics.map((topic) => (
-                <NewsFeed key={topic.id} topic={topic} />
-              ))}
-            </div>
-        </div>
+    <>
+      <div className="min-h-screen bg-light-bg font-sans">
+        <Header />
+        <main className="container mx-auto p-4 md:p-8">
+          <WaterCoolerQuote 
+            quote={quote} 
+            isLoading={isQuoteLoading}
+            tones={quoteTones}
+            selectedTone={quoteTone}
+            onToneChange={setQuoteTone} 
+          />
+          <ConversationGenerator favoriteTeam={favoriteTeam} onSetFavoriteTeam={setFavoriteTeam} />
+          
+          <div className="mt-12">
+              <h2 className="text-3xl font-bold text-light-text mb-6">Your Weekly Briefing</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {newsTopics.map((topic) => (
+                  <NewsFeed 
+                    key={topic.id} 
+                    topic={topic} 
+                    onOpenTeamModal={() => setIsTeamModalOpen(true)}
+                  />
+                ))}
+              </div>
+          </div>
 
-        <footer className="text-center mt-12 text-light-text-secondary text-sm">
-          <p>Powered by Gemini AI. Your weekly football briefing is ready.</p>
-        </footer>
-      </main>
-    </div>
+          <footer className="text-center mt-12 text-light-text-secondary text-sm">
+            <p>Powered by Gemini AI. Your weekly football briefing is ready.</p>
+          </footer>
+        </main>
+      </div>
+      <TeamSelectionModal
+          isOpen={isTeamModalOpen}
+          onClose={() => setIsTeamModalOpen(false)}
+          allTeams={teams}
+          currentFavorite={favoriteTeam}
+          onSetFavorite={handleSetFavoriteTeam}
+      />
+    </>
   );
 };
 

@@ -9,12 +9,14 @@ import { SparklesIcon } from './icons/SparklesIcon';
 import { LoadingSpinner } from './icons/LoadingSpinner';
 import { RefreshIcon } from './icons/RefreshIcon';
 import { LatestResults } from './LatestResults';
+import { PencilIcon } from './icons/PencilIcon';
 
 interface NewsFeedProps {
   topic: NewsTopic;
+  onOpenTeamModal?: () => void;
 }
 
-export const NewsFeed: React.FC<NewsFeedProps> = ({ topic }) => {
+export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal }) => {
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +28,9 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic }) => {
     const cachedData = cacheService.get<SummaryData>(cacheKey);
     if (cachedData) {
       setSummaryData(cachedData);
+    } else {
+      // If no cache, clear any potential stale data from a previous topic (e.g., favorite team changed)
+      setSummaryData(null);
     }
   }, [topic.id]);
 
@@ -47,7 +52,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic }) => {
     }
     
     try {
-      const data = await generateFootballSummary(topic.query, wordCount);
+      const data = await generateFootballSummary(topic.query, wordCount, topic.isFavorite);
       setSummaryData(data);
       cacheService.set(cacheKey, data);
     } catch (e: any) {
@@ -55,12 +60,22 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [topic.id, topic.query, wordCount]);
+  }, [topic.id, topic.query, wordCount, topic.isFavorite]);
 
   return (
     <div className="bg-light-card rounded-xl shadow-sm overflow-hidden flex flex-col border border-light-border h-full">
-      <div className={`p-6 bg-gradient-to-br ${topic.gradient}`}>
+      <div className={`p-6 bg-gradient-to-br ${topic.gradient} flex justify-between items-center`}>
         <h2 className="text-2xl font-bold text-white">{topic.title}</h2>
+        {topic.isFavorite && onOpenTeamModal && (
+            <button 
+                onClick={onOpenTeamModal}
+                className="text-white/80 hover:text-white p-2 rounded-full hover:bg-white/20 transition-colors"
+                aria-label="Change favorite team"
+                title="Change favorite team"
+            >
+                <PencilIcon className="w-5 h-5"/>
+            </button>
+        )}
       </div>
 
       <div className="p-6 flex-grow flex flex-col relative">
@@ -103,7 +118,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic }) => {
             
             {summaryData && (
               <div className="space-y-6 animate-fade-in">
-                 {topic.id === 'celtic' && summaryData.results && summaryData.form && (
+                 {topic.isFavorite && summaryData.results && summaryData.form && (
                     <LatestResults results={summaryData.results} form={summaryData.form} />
                 )}
                 <SummaryCard data={summaryData} />

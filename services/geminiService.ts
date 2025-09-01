@@ -35,12 +35,11 @@ const parseResponseText = (text: string): Omit<SummaryData, 'citations'> => {
   return data;
 };
 
-export const generateFootballSummary = async (query: string, wordCount: number): Promise<SummaryData> => {
+export const generateFootballSummary = async (query: string, wordCount: number, isFavoriteQuery: boolean = false): Promise<SummaryData> => {
   try {
-    const isCelticQuery = query.toLowerCase().includes('celtic fc');
 
-    const celticAddon = `
-      You are also providing information for a dedicated Celtic FC fan. Please also include the following sections if available from recent news:
+    const favoriteTeamAddon = `
+      You are also providing information for a dedicated fan of the team in this query. Please also include the following sections if available from recent news:
 
       [RESULTS]
       - The results of their last 2-3 matches, including the competition.
@@ -60,7 +59,7 @@ export const generateFootballSummary = async (query: string, wordCount: number):
       Your entire response must be structured using the following special markers, and nothing else:
 
       [HEADLINE]
-      A catchy, conversational headline about the most exciting news, phrased as if you're talking to your friend Mario.
+      A catchy, conversational headline about the most exciting news.
       [/HEADLINE]
 
       [SUMMARY]
@@ -73,7 +72,7 @@ export const generateFootballSummary = async (query: string, wordCount: number):
       - A third conversation starter.
       [/STARTERS]
       
-      ${isCelticQuery ? celticAddon : ''}
+      ${isFavoriteQuery ? favoriteTeamAddon : ''}
     `;
 
     const response = await ai.models.generateContent({

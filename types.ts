@@ -4,6 +4,7 @@ export interface NewsTopic {
   title: string;
   query: string;
   gradient: string;
+  isFavorite?: boolean;
 }
 
 export interface Citation {
