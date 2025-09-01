@@ -1,5 +1,19 @@
+
+export const isDailyLimitError = (error: Error): boolean => {
+    if (!error || !error.message) return false;
+    const msg = error.message.toLowerCase();
+    // Check for specific phrases indicating a daily, not per-minute, limit.
+    return msg.includes('daily limit') || msg.includes('quota has been exhausted for this project');
+};
+
 export const isRateLimitError = (error: Error): boolean => {
     if (!error || !error.message) return false;
+
+    // A daily limit is a type of rate limit, but we want to handle it differently.
+    // This function will now specifically identify PER-MINUTE rate limits.
+    if (isDailyLimitError(error)) {
+        return false;
+    }
 
     try {
         const errorDetails = JSON.parse(error.message);
@@ -17,6 +31,10 @@ export const getFriendlyErrorMessage = (error: unknown): string => {
         return "An unknown error occurred. Please try again.";
     }
 
+    if (isDailyLimitError(error)) {
+        return "You've reached the daily API request limit. Please try again tomorrow.";
+    }
+
     try {
         // The Gemini SDK often stringifies the API error response in the message
         const errorDetails = JSON.parse(error.message);
@@ -24,7 +42,7 @@ export const getFriendlyErrorMessage = (error: unknown): string => {
         const message = errorDetails?.error?.message;
 
         if (status === 'RESOURCE_EXHAUSTED') {
-            return "API quota exceeded. Please check your billing details and try again later.";
+            return "API quota exceeded. This is usually temporary. Please try again in a minute.";
         }
 
         // Return the Gemini API's message if it exists and is helpful

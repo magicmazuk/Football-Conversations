@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { NewsTopic, SummaryData } from '../types';
 import { generateFootballSummary } from '../services/geminiService';
@@ -19,10 +20,11 @@ interface NewsFeedProps {
   onOpenTeamModal?: () => void;
   onGlobalError: (error: unknown) => void;
   isRateLimited: boolean;
+  isDailyLimited: boolean;
   cooldown: number;
 }
 
-export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGlobalError, isRateLimited, cooldown }) => {
+export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGlobalError, isRateLimited, isDailyLimited, cooldown }) => {
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,6 +112,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGl
                   className="text-text-secondary hover:text-text-primary p-1.5 rounded-full hover:bg-gray-200 transition-colors" 
                   aria-label="Refresh summary"
                   title="Refresh summary"
+                  disabled={isRateLimited || isDailyLimited}
                 >
                     <RefreshIcon />
                 </button>
@@ -121,7 +124,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGl
         {!summaryData && (
           <button
             onClick={() => handleGenerate()}
-            disabled={isLoading || isRateLimited}
+            disabled={isLoading || isRateLimited || isDailyLimited}
             className="w-full mt-4 flex items-center justify-center px-6 py-2.5 border border-transparent text-base font-medium rounded-md text-white bg-brand-primary hover:bg-brand-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-card-bg focus:ring-brand-primary disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? (
@@ -131,6 +134,8 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGl
               </>
             ) : isRateLimited ? (
                 <span>On Cooldown ({cooldown}s)...</span>
+            ) : isDailyLimited ? (
+                <span>Daily Limit Reached</span>
             ) : (
               <>
                 <SparklesIcon />

@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { AlertTriangleIcon } from './icons/AlertTriangleIcon';
 import { CloseIcon } from './icons/CloseIcon';
-import { isRateLimitError } from '../services/errorService';
+import { isRateLimitError, isDailyLimitError } from '../services/errorService';
 
 interface ErrorDisplayProps {
     error: Error;
@@ -27,16 +28,8 @@ const GenericErrorContent: React.FC<{ onShowApiKeyForm: () => void }> = ({ onSho
 const RateLimitErrorContent: React.FC = () => (
     <>
         <p className="font-bold">API Rate Limit Exceeded</p>
-        <p className="text-sm">You've exceeded your current quota for the Gemini API. Please check your billing details and usage limits.</p>
+        <p className="text-sm">You've exceeded your current per-minute quota for the Gemini API. Please wait for the cooldown to finish.</p>
         <div className="mt-3 flex flex-wrap gap-2">
-            <a
-                href="https://aistudio.google.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-100 focus:ring-red-600 transition-colors text-sm"
-            >
-                Check Google AI Studio
-            </a>
             <a
                 href="https://ai.google.dev/gemini-api/docs/rate-limits"
                 target="_blank"
@@ -49,8 +42,27 @@ const RateLimitErrorContent: React.FC = () => (
     </>
 );
 
+const DailyLimitErrorContent: React.FC = () => (
+    <>
+        <p className="font-bold">Daily API Limit Reached</p>
+        <p className="text-sm">You have reached your daily quota for the Gemini API. Please try again tomorrow or check your usage limits.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+            <a
+                href="https://ai.google.dev/gemini-api/docs/rate-limits"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-100 focus:ring-red-600 transition-colors text-sm"
+            >
+                View Rate Limits
+            </a>
+        </div>
+    </>
+);
+
+
 export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose, onShowApiKeyForm }) => {
     const isRateLimited = isRateLimitError(error);
+    const isDailyLimited = isDailyLimitError(error);
 
     return (
         <div className="fixed bottom-4 right-4 z-50 w-full max-w-lg animate-fade-in" role="alert">
@@ -58,7 +70,9 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose, onSh
                 <div className="flex items-start">
                     <AlertTriangleIcon className="w-6 h-6 mr-3 text-red-600" />
                     <div className="flex-grow">
-                        {isRateLimited ? (
+                        {isDailyLimited ? (
+                            <DailyLimitErrorContent />
+                        ) : isRateLimited ? (
                             <RateLimitErrorContent />
                         ) : (
                             <GenericErrorContent onShowApiKeyForm={onShowApiKeyForm} />

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { NewsFeed } from './components/NewsFeed';
@@ -11,7 +12,8 @@ import { teams } from './data/teams';
 import { ApiKeyBanner } from './components/ApiKeyBanner';
 import { apiKeyManager } from './services/apiKeyManager';
 import { ErrorDisplay } from './components/ErrorDisplay';
-import { getFriendlyErrorMessage, isRateLimitError } from './services/errorService';
+import { getFriendlyErrorMessage, isRateLimitError, isDailyLimitError } from './services/errorService';
+import { DailyLimitBanner } from './components/DailyLimitBanner';
 
 const FAVORITE_TEAM_KEY = 'watercooler-fc-favorite-team';
 
@@ -28,21 +30,34 @@ const App: React.FC = () => {
   const [globalError, setGlobalError] = useState<Error | null>(null);
   const [healthCheckStatus, setHealthCheckStatus] = useState<'idle' | 'checking' | 'success' | 'failed'>('idle');
   const [cooldown, setCooldown] = useState(0);
+  const [isDailyLimited, setIsDailyLimited] = useState(false);
 
   useEffect(() => {
     if (cooldown > 0) {
         const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
         return () => clearTimeout(timer);
+    } else {
+        // When cooldown ends, clear any lingering minute-based rate limit errors.
+        if (globalError && isRateLimitError(globalError)) {
+          setGlobalError(null);
+        }
     }
-  }, [cooldown]);
+  }, [cooldown, globalError]);
 
   const isRateLimited = cooldown > 0;
 
   const handleApiError = (error: unknown) => {
     const err = error instanceof Error ? error : new Error(String(error) || "An unknown error occurred");
-    setGlobalError(err);
-    if (isRateLimitError(err) && cooldown === 0) {
-        setCooldown(60); // Start 60-second cooldown
+
+    if (isDailyLimitError(err)) {
+        setIsDailyLimited(true);
+        setGlobalError(null); // Clear other popups; the banner is the main indicator.
+        setQuoteError(null); // Also clear quote-specific error.
+    } else {
+        setGlobalError(err);
+        if (isRateLimitError(err) && cooldown === 0) {
+            setCooldown(60); // Start 60-second cooldown
+        }
     }
   };
 
@@ -87,10 +102,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const fetchQuote = async () => {
-      if (isRateLimited) {
-        setQuote(`API rate limit active. Please try again in ${cooldown} seconds.`);
-        setIsQuoteLoading(false);
-        setQuoteError(null);
+      // Don't attempt to fetch if we are in a cooldown period or daily limited.
+      if (isRateLimited || isDailyLimited) {
         return;
       }
 
@@ -118,14 +131,13 @@ const App: React.FC = () => {
       } catch (error: any) {
         console.error(error);
         setQuoteError(getFriendlyErrorMessage(error));
-        setQuote('');
         handleApiError(error);
       } finally {
         setIsQuoteLoading(false);
       }
     };
     fetchQuote();
-  }, [quoteTone, isRateLimited, cooldown]);
+  }, [quoteTone, isRateLimited, isDailyLimited]);
 
   const handleSetFavoriteTeam = (team: string) => {
     setFavoriteTeam(team);
@@ -173,6 +185,7 @@ const App: React.FC = () => {
         <Header />
         <main className="container mx-auto p-4 md:p-6">
           {showApiKeyBanner && <ApiKeyBanner onKeySaved={() => window.location.reload()} />}
+          {isDailyLimited && <DailyLimitBanner />}
           <WaterCoolerQuote 
             quote={quote} 
             isLoading={isQuoteLoading}
@@ -181,12 +194,15 @@ const App: React.FC = () => {
             selectedTone={quoteTone}
             onToneChange={setQuoteTone}
             isRateLimited={isRateLimited}
+            isDailyLimited={isDailyLimited}
+            cooldown={cooldown}
           />
           <ConversationGenerator 
             favoriteTeam={favoriteTeam} 
             onSetFavoriteTeam={setFavoriteTeam}
             onGlobalError={handleApiError}
             isRateLimited={isRateLimited}
+            isDailyLimited={isDailyLimited}
             cooldown={cooldown}
           />
           
@@ -200,6 +216,7 @@ const App: React.FC = () => {
                     onOpenTeamModal={() => setIsTeamModalOpen(true)}
                     onGlobalError={handleApiError}
                     isRateLimited={isRateLimited}
+                    isDailyLimited={isDailyLimited}
                     cooldown={cooldown}
                   />
                 ))}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { teams } from '../data/teams';
 import { generateTeamInsights } from '../services/geminiService';
@@ -18,10 +19,11 @@ interface ConversationGeneratorProps {
     onSetFavoriteTeam: (team: string) => void;
     onGlobalError: (error: unknown) => void;
     isRateLimited: boolean;
+    isDailyLimited: boolean;
     cooldown: number;
 }
 
-export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ favoriteTeam, onSetFavoriteTeam, onGlobalError, isRateLimited, cooldown }) => {
+export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ favoriteTeam, onSetFavoriteTeam, onGlobalError, isRateLimited, isDailyLimited, cooldown }) => {
     const [inputValue, setInputValue] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -127,14 +129,14 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
 
             <button
                 onClick={() => handleGenerate()}
-                disabled={isLoading || !inputValue.trim() || isRateLimited}
+                disabled={isLoading || !inputValue.trim() || isRateLimited || isDailyLimited}
                 className="w-full mt-3 flex items-center justify-center px-6 py-2.5 border border-transparent text-base font-medium rounded-md text-white bg-brand-primary hover:bg-brand-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-card-bg focus:ring-brand-primary disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
                 {isLoading ? <LoadingSpinner className="-ml-1 mr-3 h-5 w-5 text-white" /> : <SparklesIcon />}
                 <span>{isLoading ? 'Generating...' : `Get Insights for ${inputValue.trim() || '...'}`}</span>
             </button>
 
-            {isRateLimited && (
+            {isRateLimited && !isDailyLimited && (
                 <p className="text-center text-sm text-yellow-600 mt-2 animate-fade-in">
                     Rate limit active. Please try again in {cooldown}s.
                 </p>
@@ -151,6 +153,7 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
                                 className="text-text-secondary hover:text-text-primary p-1.5 rounded-full hover:bg-gray-200 transition-colors" 
                                 aria-label="Refresh insights"
                                 title="Refresh insights"
+                                disabled={isRateLimited || isDailyLimited}
                             >
                                 <RefreshIcon />
                             </button>
