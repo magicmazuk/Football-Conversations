@@ -10,6 +10,18 @@ const getAiInstance = () => {
   return new GoogleGenAI({ apiKey: API_KEY });
 };
 
+/**
+ * Checks if the error from the Gemini API is related to an invalid API key.
+ */
+const isApiKeyError = (error: any): boolean => {
+    if (error instanceof Error) {
+        const message = error.message.toLowerCase();
+        // Google's API client often includes a status code like [400]
+        return message.includes('api key not valid') || 
+               message.includes('api key is invalid');
+    }
+    return false;
+}
 
 const parseResponseText = (text: string): Omit<SummaryData, 'citations'> => {
   const headline = text.match(/\[HEADLINE\]([\s\S]*?)\[\/HEADLINE\]/)?.[1]?.trim() || '';
@@ -136,6 +148,9 @@ export const generateFootballSummary = async (query: string, wordCount: number, 
     if (error instanceof Error && error.message.startsWith("Configuration Error:")) {
         throw error;
     }
+    if (isApiKeyError(error)) {
+        throw new Error("Configuration Error: The provided Google Gemini API key is invalid.");
+    }
     throw new Error("Failed to generate summary. The AI service might be temporarily unavailable.");
   }
 };
@@ -200,6 +215,9 @@ export const generateTeamInsights = async (teamName: string): Promise<TeamInsigh
     if (error instanceof Error && error.message.startsWith("Configuration Error:")) {
         throw error;
     }
+    if (isApiKeyError(error)) {
+        throw new Error("Configuration Error: The provided Google Gemini API key is invalid.");
+    }
     throw new Error(`Failed to generate insights for ${teamName}.`);
   }
 };
@@ -231,6 +249,9 @@ export const generateWaterCoolerQuote = async (tone: string): Promise<string> =>
     console.error("Error generating water cooler quote:", error);
     if (error instanceof Error && error.message.startsWith("Configuration Error:")) {
         throw error;
+    }
+    if (isApiKeyError(error)) {
+        throw new Error("Configuration Error: The provided Google Gemini API key is invalid.");
     }
     throw new Error("Failed to generate a quote.");
   }

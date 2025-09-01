@@ -73,7 +73,7 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
             setTeamInsights(data);
             cacheService.set(cacheKey, data);
         } catch (e: any) {
-            if (e.message.includes("API key is missing")) {
+            if (e.message.startsWith("Configuration Error:")) {
                 onApiKeyError();
                 setTeamInsights(null);
             } else {

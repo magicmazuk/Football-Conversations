@@ -62,9 +62,10 @@ const App: React.FC = () => {
         cacheService.set(cacheKey, newQuote);
       } catch (error: any) {
         console.error(error);
-        if (error.message.includes("API key is missing")) {
+        if (error.message.startsWith("Configuration Error:")) {
             setShowApiKeyBanner(true);
             setQuote('');
+            setQuoteError(null);
         } else {
             setQuoteError(error.message || "Couldn't fetch a witty quote, looks like the AI is on a tea break!");
             setQuote('');

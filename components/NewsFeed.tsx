@@ -58,7 +58,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onAp
       setSummaryData(data);
       cacheService.set(cacheKey, data);
     } catch (e: any) {
-      if (e.message.includes("API key is missing")) {
+      if (e.message.startsWith("Configuration Error:")) {
         onApiKeyError();
         setSummaryData(null);
       } else {
