@@ -13,7 +13,6 @@ import { TrendingUpIcon } from './icons/TrendingUpIcon';
 
 export const ConversationGenerator: React.FC = () => {
     const [inputValue, setInputValue] = useState('');
-    const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [teamInsights, setTeamInsights] = useState<TeamInsights | null>(null);
@@ -34,17 +33,19 @@ export const ConversationGenerator: React.FC = () => {
 
     const handleSelectTeam = (team: string) => {
         setInputValue(team);
-        setSelectedTeam(team);
         setShowSuggestions(false);
         setTeamInsights(null); // Clear previous results when a new team is selected
     };
 
     const handleGenerate = useCallback(async (forceRefresh = false) => {
-        if (!selectedTeam) return;
+        const teamToSearch = inputValue.trim();
+        if (!teamToSearch) return;
+
         setIsLoading(true);
         setError(null);
+        setShowSuggestions(false);
         
-        const cacheKey = `insights-${selectedTeam.replace(/\s+/g, '-').toLowerCase()}`;
+        const cacheKey = `insights-${teamToSearch.replace(/\s+/g, '-').toLowerCase()}`;
 
         if (forceRefresh) {
             cacheService.clear(cacheKey);
@@ -59,7 +60,7 @@ export const ConversationGenerator: React.FC = () => {
         }
 
         try {
-            const data = await generateTeamInsights(selectedTeam);
+            const data = await generateTeamInsights(teamToSearch);
             setTeamInsights(data);
             cacheService.set(cacheKey, data);
         } catch (e: any) {
@@ -67,7 +68,7 @@ export const ConversationGenerator: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [selectedTeam]);
+    }, [inputValue]);
 
     return (
         <section className="p-6 bg-light-card rounded-xl border border-light-border shadow-sm">
@@ -80,9 +81,10 @@ export const ConversationGenerator: React.FC = () => {
                     value={inputValue}
                     onChange={(e) => {
                       setInputValue(e.target.value);
-                      setSelectedTeam(null);
+                      if (teamInsights) setTeamInsights(null); // Clear results on new input
                     }}
-                    placeholder="Search for a team (e.g., Real Madrid)"
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleGenerate()}}
+                    placeholder="Search for any team (e.g., Real Madrid)"
                     className="w-full px-4 py-2 border border-light-border rounded-md focus:ring-2 focus:ring-brand-green focus:outline-none"
                     aria-label="Search for a football team"
                 />
@@ -103,11 +105,11 @@ export const ConversationGenerator: React.FC = () => {
 
             <button
                 onClick={() => handleGenerate()}
-                disabled={isLoading || !selectedTeam}
+                disabled={isLoading || !inputValue.trim()}
                 className="w-full mt-4 flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-brand-green hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-light-card focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-                {isLoading ? <LoadingSpinner /> : <SparklesIcon />}
-                <span>{isLoading ? 'Generating...' : `Get Insights for ${selectedTeam || '...'}`}</span>
+                {isLoading ? <LoadingSpinner className="-ml-1 mr-3 h-5 w-5 text-white" /> : <SparklesIcon />}
+                <span>{isLoading ? 'Generating...' : `Get Insights for ${inputValue.trim() || '...'}`}</span>
             </button>
 
             <div className="mt-6">

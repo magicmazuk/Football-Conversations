@@ -1,4 +1,5 @@
 import React from 'react';
+import { LoadingSpinner } from './icons/LoadingSpinner';
 
 interface WaterCoolerQuoteProps {
     quote: string;
@@ -32,7 +33,9 @@ export const WaterCoolerQuote: React.FC<WaterCoolerQuoteProps> = ({ quote, isLoa
             </div>
             <div className="text-center">
                 {isLoading ? (
-                     <div className="h-6 bg-gray-200 rounded-md w-3/4 mx-auto animate-pulse"></div>
+                     <div className="flex justify-center items-center h-6">
+                        <LoadingSpinner className="h-6 w-6 text-light-text-secondary" />
+                     </div>
                 ) : (
                     <p className="text-lg italic text-light-text-secondary">
                         "{quote}"
