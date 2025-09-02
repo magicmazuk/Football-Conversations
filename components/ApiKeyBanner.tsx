@@ -11,7 +11,8 @@ export const ApiKeyBanner: React.FC<ApiKeyBannerProps> = ({ onKeySaved }) => {
 
     const handleSave = () => {
         if (apiKey.trim()) {
-            apiKeyManager.setApiKey(apiKey.trim());
+            // Fix: Pass the provider 'gemini' as the first argument.
+            apiKeyManager.setApiKey('gemini', apiKey.trim());
             onKeySaved();
         }
     };

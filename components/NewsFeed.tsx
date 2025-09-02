@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { NewsTopic, SummaryData } from '../types';
-import { generateFootballSummary } from '../services/geminiService';
+import { generateFootballSummary } from '../services/aiService';
 import { cacheService } from '../services/cacheService';
 import { SummaryCard } from './SummaryCard';
 import { ConversationStarters } from './ConversationStarters';
@@ -32,7 +32,8 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGl
 
   useEffect(() => {
     // On initial load, check if there's a cached summary for the default word count.
-    const cacheKey = `summary-${topic.id}-150`;
+    const provider = apiKeyManager.getActiveProvider();
+    const cacheKey = `summary-${provider}-${topic.id}-150`;
     const cachedData = cacheService.get<SummaryData>(cacheKey);
     if (cachedData) {
       setSummaryData(cachedData);
@@ -43,15 +44,15 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({ topic, onOpenTeamModal, onGl
   }, [topic.id]);
 
   const handleGenerate = useCallback(async (forceRefresh = false) => {
-    if (!apiKeyManager.getApiKey()) {
-      // The proactive banner in App.tsx handles this, but as a safeguard:
-      setError("Please set your Gemini API key to generate content.");
+    if (!apiKeyManager.getActiveApiKey()) {
+      setError("Please configure an AI Provider in Settings to generate content.");
       return;
     }
     
     setIsLoading(true);
     setError(null);
-    const cacheKey = `summary-${topic.id}-${wordCount}`;
+    const provider = apiKeyManager.getActiveProvider();
+    const cacheKey = `summary-${provider}-${topic.id}-${wordCount}`;
 
     if (!forceRefresh) {
       const cachedData = cacheService.get<SummaryData>(cacheKey);

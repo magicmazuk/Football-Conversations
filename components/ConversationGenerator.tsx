@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { teams } from '../data/teams';
-import { generateTeamInsights } from '../services/geminiService';
+import { generateTeamInsights } from '../services/aiService';
 import { cacheService } from '../services/cacheService';
 import { TeamInsights } from '../types';
 import { LoadingSpinner } from './icons/LoadingSpinner';
@@ -55,8 +55,8 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
         const teamToSearch = inputValue.trim();
         if (!teamToSearch) return;
 
-        if (!apiKeyManager.getApiKey()) {
-            setError("Please set your Gemini API key to generate insights.");
+        if (!apiKeyManager.getActiveApiKey()) {
+            setError("Please configure an AI Provider in Settings to generate insights.");
             return;
         }
 
@@ -65,7 +65,8 @@ export const ConversationGenerator: React.FC<ConversationGeneratorProps> = ({ fa
         setShowSuggestions(false);
         setSearchedTeam(teamToSearch);
         
-        const cacheKey = `insights-${teamToSearch.replace(/\s+/g, '-').toLowerCase()}`;
+        const provider = apiKeyManager.getActiveProvider();
+        const cacheKey = `insights-${provider}-${teamToSearch.replace(/\s+/g, '-').toLowerCase()}`;
 
         if (forceRefresh) {
             cacheService.clear(cacheKey);

@@ -8,10 +8,10 @@ export const DailyLimitBanner: React.FC = () => {
             <div className="flex items-start">
                 <CalendarIcon className="w-6 h-6 mr-3 text-red-600" />
                 <div>
-                    <p className="font-bold">Daily API Limit Reached</p>
+                    <p className="font-bold">Gemini Daily API Limit Reached</p>
                     <p className="text-sm">
-                        You have reached the daily request limit for the Gemini API. All AI features have been disabled.
-                        Please try again tomorrow when the quota resets.
+                        You have reached the daily request limit for the Gemini API. All AI features for this provider have been disabled.
+                        Please try again tomorrow when the quota resets, or switch to a different AI provider in Settings.
                     </p>
                      <a
                         href="https://ai.google.dev/gemini-api/docs/rate-limits"

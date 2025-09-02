@@ -5,11 +5,11 @@ import { NewsFeed } from './components/NewsFeed';
 import { ConversationGenerator } from './components/ConversationGenerator';
 import { WaterCoolerQuote } from './components/WaterCoolerQuote';
 import { NewsTopic } from './types';
-import { generateWaterCoolerQuote, healthCheck } from './services/geminiService';
+import { generateWaterCoolerQuote, healthCheck } from './services/aiService';
 import { cacheService } from './services/cacheService';
 import { TeamSelectionModal } from './components/TeamSelectionModal';
+import { SettingsModal } from './components/SettingsModal';
 import { teams } from './data/teams';
-import { ApiKeyBanner } from './components/ApiKeyBanner';
 import { apiKeyManager } from './services/apiKeyManager';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { getFriendlyErrorMessage, isRateLimitError, isDailyLimitError } from './services/errorService';
@@ -23,22 +23,24 @@ const App: React.FC = () => {
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [quoteTone, setQuoteTone] = useState('A Neutral Colleague');
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [favoriteTeam, setFavoriteTeam] = useState<string>(() => {
     return localStorage.getItem(FAVORITE_TEAM_KEY) || 'Celtic';
   });
-  const [showApiKeyBanner, setShowApiKeyBanner] = useState(false);
   const [globalError, setGlobalError] = useState<Error | null>(null);
   const [healthCheckStatus, setHealthCheckStatus] = useState<'idle' | 'checking' | 'success' | 'failed'>('idle');
+  const [healthCheckResult, setHealthCheckResult] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [isDailyLimited, setIsDailyLimited] = useState(false);
+  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
+    const provider = apiKeyManager.getActiveProvider();
     if (cooldown > 0) {
         const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
         return () => clearTimeout(timer);
     } else {
-        // When cooldown ends, clear any lingering minute-based rate limit errors.
-        if (globalError && isRateLimitError(globalError)) {
+        if (globalError && isRateLimitError(globalError, provider)) {
           setGlobalError(null);
         }
     }
@@ -48,20 +50,20 @@ const App: React.FC = () => {
 
   const handleApiError = (error: unknown) => {
     const err = error instanceof Error ? error : new Error(String(error) || "An unknown error occurred");
+    const provider = apiKeyManager.getActiveProvider();
 
-    if (isDailyLimitError(err)) {
+    if (isDailyLimitError(err, provider)) {
         setIsDailyLimited(true);
-        setGlobalError(null); // Clear other popups; the banner is the main indicator.
-        setQuoteError(null); // Also clear quote-specific error.
+        setGlobalError(null); 
+        setQuoteError(null); 
     } else {
         setGlobalError(err);
-        if (isRateLimitError(err) && cooldown === 0) {
-            setCooldown(60); // Start 60-second cooldown
+        if (isRateLimitError(err, provider) && cooldown === 0) {
+            setCooldown(60);
         }
     }
   };
 
-  // Global unhandled rejection handler as a fallback
   useEffect(() => {
     const handleRejection = (event: PromiseRejectionEvent) => {
         console.error('Unhandled Promise Rejection:', event.reason);
@@ -75,12 +77,11 @@ const App: React.FC = () => {
     };
   }, []);
 
-
-  // Proactive API Key check on initial load
   useEffect(() => {
-    if (!apiKeyManager.getApiKey()) {
-      setShowApiKeyBanner(true);
+    if (!apiKeyManager.getActiveApiKey()) {
+      setIsSettingsModalOpen(true);
     }
+    setAppReady(true);
   }, []);
 
   useEffect(() => {
@@ -102,20 +103,20 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const fetchQuote = async () => {
-      // Don't attempt to fetch if we are in a cooldown period or daily limited.
-      if (isRateLimited || isDailyLimited) {
+      if (!appReady || isRateLimited || isDailyLimited) {
         return;
       }
 
-      if (!apiKeyManager.getApiKey()) {
-        setQuote("Set your Gemini API key to get started!");
+      if (!apiKeyManager.getActiveApiKey()) {
+        setQuote("Please configure an AI provider in Settings to get started!");
         setIsQuoteLoading(false);
         return;
       }
 
       setIsQuoteLoading(true);
       setQuoteError(null);
-      const cacheKey = `water-cooler-quote-${quoteTone.replace(/\s+/g, '-').toLowerCase()}`;
+      const provider = apiKeyManager.getActiveProvider();
+      const cacheKey = `water-cooler-quote-${provider}-${quoteTone.replace(/\s+/g, '-').toLowerCase()}`;
       const cachedQuote = cacheService.get<string>(cacheKey);
 
       if (cachedQuote) {
@@ -137,7 +138,7 @@ const App: React.FC = () => {
       }
     };
     fetchQuote();
-  }, [quoteTone, isRateLimited, isDailyLimited]);
+  }, [quoteTone, isRateLimited, isDailyLimited, appReady]);
 
   const handleSetFavoriteTeam = (team: string) => {
     setFavoriteTeam(team);
@@ -147,13 +148,19 @@ const App: React.FC = () => {
   const handleHealthCheck = async () => {
     setHealthCheckStatus('checking');
     setGlobalError(null);
-    try {
-        await healthCheck();
+    setHealthCheckResult(null);
+
+    const result = await healthCheck();
+    setHealthCheckResult(result.message);
+
+    if (result.success) {
         setHealthCheckStatus('success');
-        setTimeout(() => setHealthCheckStatus('idle'), 3000);
-    } catch (error: any) {
+        setTimeout(() => {
+            setHealthCheckStatus('idle');
+            setHealthCheckResult(null);
+        }, 5000);
+    } else {
         setHealthCheckStatus('failed');
-        handleApiError(error);
     }
   };
 
@@ -182,9 +189,8 @@ const App: React.FC = () => {
   return (
     <>
       <div className="min-h-screen bg-page-bg font-sans">
-        <Header />
+        <Header onOpenSettings={() => setIsSettingsModalOpen(true)} />
         <main className="container mx-auto p-4 md:p-6">
-          {showApiKeyBanner && <ApiKeyBanner onKeySaved={() => window.location.reload()} />}
           {isDailyLimited && <DailyLimitBanner />}
           <WaterCoolerQuote 
             quote={quote} 
@@ -224,7 +230,7 @@ const App: React.FC = () => {
           </div>
 
           <footer className="text-center mt-10 text-text-secondary text-sm">
-            <p>Powered by Gemini AI. Your weekly football briefing is ready.</p>
+            <p>Powered by AI. Your weekly football briefing is ready.</p>
             <div className="mt-2">
                 <button onClick={handleHealthCheck} disabled={healthCheckStatus === 'checking'} className="text-xs text-slate-400 hover:text-slate-600 underline disabled:cursor-wait disabled:no-underline">
                     {healthCheckStatus === 'checking' && 'Checking API connection...'}
@@ -232,6 +238,23 @@ const App: React.FC = () => {
                     {healthCheckStatus === 'failed' && 'Connection Check Failed. Click to retry.'}
                     {healthCheckStatus === 'success' && '✅ Connection Successful!'}
                 </button>
+                 {healthCheckResult && (
+                    <div className={`mt-2 text-xs text-left max-w-xl mx-auto p-3 rounded-md border ${
+                        healthCheckStatus === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'
+                    }`}>
+                        <p className="whitespace-pre-wrap">{healthCheckResult}</p>
+                        {healthCheckStatus === 'failed' && apiKeyManager.getActiveProvider() === 'gemini' && (
+                             <a 
+                                href="https://console.cloud.google.com/billing" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="font-semibold underline hover:text-red-600 mt-1 inline-block"
+                            >
+                                Check Google Cloud Billing &rarr;
+                            </a>
+                        )}
+                    </div>
+                )}
             </div>
           </footer>
         </main>
@@ -243,12 +266,20 @@ const App: React.FC = () => {
           currentFavorite={favoriteTeam}
           onSetFavorite={handleSetFavoriteTeam}
       />
+      <SettingsModal 
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          onSave={() => {
+            setIsSettingsModalOpen(false);
+            window.location.reload();
+          }}
+      />
        {globalError && (
             <ErrorDisplay 
                 error={globalError} 
                 onClose={() => setGlobalError(null)}
-                onShowApiKeyForm={() => {
-                  setShowApiKeyBanner(true);
+                onOpenSettings={() => {
+                  setIsSettingsModalOpen(true);
                   setGlobalError(null);
                 }}
             />

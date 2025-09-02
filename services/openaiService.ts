@@ -1,11 +1,15 @@
 
-import { GoogleGenAI } from "@google/genai";
-import { SummaryData, Citation, TeamInsights, LeagueTableRow } from '../types';
+import OpenAI from 'openai';
+import { SummaryData, TeamInsights, LeagueTableRow } from '../types';
+import { apiKeyManager } from './apiKeyManager';
 
 const getAiInstance = () => {
-  // Per coding guidelines, the API key must be obtained exclusively from process.env.API_KEY.
-  // It is assumed to be pre-configured and valid.
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const API_KEY = apiKeyManager.getApiKey('openai');
+  if (!API_KEY) {
+    throw new Error("Configuration Error: The OpenAI API key is missing. Please set it in the settings.");
+  }
+  // This is a browser-based app, so we must enable this option.
+  return new OpenAI({ apiKey: API_KEY, dangerouslyAllowBrowser: true });
 };
 
 const parseResponseText = (text: string): Omit<SummaryData, 'citations'> => {
@@ -54,7 +58,7 @@ const parseResponseText = (text: string): Omit<SummaryData, 'citations'> => {
 };
 
 export const generateFootballSummary = async (query: string, wordCount: number, isFavoriteQuery: boolean = false): Promise<SummaryData> => {
-  const ai = getAiInstance();
+  const openai = getAiInstance();
 
   const favoriteTeamAddon = `
     You are also providing information for a dedicated fan of the team in this query. Please also include the following sections if available from recent news:
@@ -83,6 +87,7 @@ export const generateFootballSummary = async (query: string, wordCount: number, 
     You are a football news expert and a friendly colleague, acting as an AI assistant for the "Watercooler FC" app.
     Your task is to provide a summary of the most important football news from the past week about ${query}.
     The summary should be approximately ${wordCount} words.
+    Do not invent sources or links.
 
     Your entire response must be structured using the following special markers, and nothing else:
 
@@ -103,34 +108,22 @@ export const generateFootballSummary = async (query: string, wordCount: number, 
     ${isFavoriteQuery ? favoriteTeamAddon : ''}
   `;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-    config: {
-      tools: [{ googleSearch: {} }],
-    },
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
   });
 
-  const parsedTextData = parseResponseText(response.text);
-  
-  const rawCitations = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-  const citations: Citation[] = (rawCitations || [])
-    .map((chunk: any) => ({
-      uri: chunk?.web?.uri || '',
-      title: chunk?.web?.title || 'Source',
-    }))
-    .filter(citation => citation.uri);
-    
-  const uniqueCitations = Array.from(new Map(citations.map(item => [item['uri'], item])).values());
+  const text = response.choices[0]?.message?.content || '';
+  const parsedTextData = parseResponseText(text);
 
   return {
     ...parsedTextData,
-    citations: uniqueCitations,
+    citations: [], // OpenAI API doesn't provide grounded citations like Gemini
   };
 };
 
 export const generateTeamInsights = async (teamName: string): Promise<TeamInsights> => {
-  const ai = getAiInstance();
+  const openai = getAiInstance();
   const prompt = `
     You are a football expert from "Watercooler FC".
     For the team "${teamName}", provide the following information based on the latest available data:
@@ -161,15 +154,12 @@ export const generateTeamInsights = async (teamName: string): Promise<TeamInsigh
     [/FORM]
   `;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-    config: {
-      tools: [{ googleSearch: {} }],
-    },
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
   });
-
-  const text = response.text;
+  
+  const text = response.choices[0]?.message?.content || '';
   
   const resultsBlock = text.match(/\[RESULTS\]([\s\S]*?)\[\/RESULTS\]/)?.[1]?.trim() || '';
   const results = resultsBlock.split('\n').map(s => s.trim().replace(/^- /, '')).filter(s => s.length > 0);
@@ -185,7 +175,7 @@ export const generateTeamInsights = async (teamName: string): Promise<TeamInsigh
 };
 
 export const generateWaterCoolerQuote = async (tone: string): Promise<string> => {
-  const ai = getAiInstance();
+  const openai = getAiInstance();
   const prompt = `
     You are a witty football pundit with a knack for tailoring your comments to your audience.
     Your task is to provide one short, insightful, or funny "water cooler" quote about the current state of world football.
@@ -200,41 +190,30 @@ export const generateWaterCoolerQuote = async (tone: string): Promise<string> =>
     
     IMPORTANT: Return only the quote itself. Do not include any extra text, labels, or quotation marks.
   `;
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
   });
-  return response.text.trim().replace(/^"|"$/g, '');
+  const text = response.choices[0]?.message?.content || '';
+  return text.trim().replace(/^"|"$/g, '');
 };
 
 export const healthCheck = async (): Promise<{ success: boolean; message: string; }> => {
-    const ai = getAiInstance();
     try {
-        await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: 'test',
-        });
-        return { success: true, message: 'Connection to Gemini API is successful!' };
+        const openai = getAiInstance();
+        // This is a lightweight call to list models, verifying authentication.
+        await openai.models.list();
+        return { success: true, message: 'Connection to OpenAI API is successful!' };
     } catch (error: any) {
-        console.error('Health check failed:', error);
-        let detailedMessage = "An unknown error occurred during the health check.";
-
-        if (error.message) {
-            try {
-                // Gemini SDK often stringifies the API error response
-                const errorDetails = JSON.parse(error.message);
-                if (errorDetails?.error?.message) {
-                    detailedMessage = `API Error: ${errorDetails.error.message.replace(/\[.*?\]\s/g, '')}`;
-                } else {
-                    detailedMessage = error.message;
-                }
-            } catch (e) {
-                // Not a JSON message, use the raw message
-                detailedMessage = error.message;
-            }
+        console.error('OpenAI Health check failed:', error);
+        let detailedMessage = "An unknown error occurred.";
+        if (error.code === 'invalid_api_key') {
+            detailedMessage = "Your API key is invalid.";
+        } else if (error.message) {
+            detailedMessage = error.message;
         }
 
-        const friendlyMessage = `Connection failed. ${detailedMessage}\n\nPlease ensure your API key is valid and that the "Generative Language API" is enabled for your project. If you are using a free-tier key from Google AI Studio, you may need to associate your project with a billing account for use outside of AI Studio.`;
+        const friendlyMessage = `Connection failed. ${detailedMessage}\n\nPlease check your OpenAI API key and ensure you have available credit in your account.`;
         return { success: false, message: friendlyMessage };
     }
 };
